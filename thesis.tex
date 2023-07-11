@@ -5,7 +5,7 @@
 \usepackage{epsfig} % Allows the inclusion of eps files
 \usepackage{epic} % Enhanced picture mode
 \usepackage{eepic} % Extensions for epic
-\usepackage{units} % SI unit typesetting
+%\usepackage{units} % SI unit typesetting
 \usepackage{url} % URL handling
 \usepackage{longtable} % Tables that continue onto multiple pages
 \usepackage{mathrsfs} % Support for \mathscr script
@@ -20,7 +20,20 @@
 \usepackage{booktabs} % Enhanced tables with \toprule, etc.
 \usepackage{hyperref} % Add clickable links to other parts of the document
 \usepackage[noabbrev]{cleveref} % Automatically determine \cref type
+\usepackage[version=4]{mhchem} % for \ce{}
+\usepackage{threeparttable}
+\usepackage{tabularx}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage{physics}
+\usepackage{isomath}
+\usepackage{subfigure}
 
+\newcommand{\comment}[1]{}
+%\newcommand{\mycolor}{black}
+%\newcommand{\mycolorfinal}{black}
+%\newcommand{\mycolortwo}{black}
+
+\graphicspath {{figures/}}
 % Configure the siunitx package
 \sisetup{
     group-separator = {,}, % Use , to separate groups of digits, like 12,345
@@ -38,6 +51,8 @@
 \includeonly{
     preliminaries/title,
     chapters/intro,
+    chapters/sCO2,
+    chapters/ISATVLE,
     chapters/science,
     chapters/experiment,
     chapters/simulation,
@@ -63,7 +78,8 @@
 % Now lets include the body of the document...
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \include{chapters/intro}
-
+\include{chapters/sCO2}
+%\include{chapters/ISATVLE}
 %Base Chapters
 \include{chapters/science}
 \include{chapters/experiment}
