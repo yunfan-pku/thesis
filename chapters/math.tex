@@ -5,34 +5,90 @@
 \label{math_chapter}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\section{Governing Equations}
-\subsection{VLE-based CFD framework}
-\label{sec:model:cfd}
-%In this study, a transcritical multiphase flow solver is developed by coupling a density-based fully compressible CFD solver with several VLE solvers. 
-The governing equations of the CFD solver are the multi-component transport equations, including the mixture density equation (i.e., continuity equation), mixture momentum equations, mixture internal energy equation, and component mass fraction equation as follows:
-\begin{align}
- &\frac{\partial \rho}{\partial t}+\frac{\partial \rho u_i}{\partial x_i}=0 \label{Gc},\\
- &\frac{\partial \rho u_i}{\partial t}+\frac{\partial \rho u_i u_j}{\partial x_j}=-\frac{\partial P}{\partial x_i}+\frac{\partial \tau_{ij}}{\partial x_j} \label{Gm},\\
- &\frac{\partial \rho e}{\partial t}+\frac{\partial \rho u_i e}{\partial x_i}+\frac{\partial \rho K}{\partial t}+\frac{\partial \rho u_i K}{\partial x_i}+\frac{\partial  u_i P}{\partial x_i}=-\frac{\partial q_i}{\partial x_i} +\frac{\partial \tau_{ij}u_j}{\partial x_i},\\
-  &\frac{\partial \rho Y_m}{\partial t}+\frac{\partial \rho Y_m u_i}{\partial x_i}=\frac{\left(\rho Y_m V_{mi}\right)}{\partial x_i},
-  %\frac{\partial }{\partial x_j}\left(\rho D \sum_m h_m \frac{\partial Y_m}{\partial x_j}\right)-\frac{\partial }
-\end{align}
-where $u_i$ is the velocity, $\rho$ is mixture density, $e$ is specific internal energy, $Y_m$ is the mass fraction of specie $m$, $\tau_{ij}$ is the viscous stress tensor defined by $ \tau_{ij} = -\frac{2}{3}\mu\frac{\partial u_k}{\partial x_k}\delta_{ij} + \mu \left( \frac{\partial u_i}{\partial x_j} +\frac{\partial u_j}{\partial x_i}\right) $, $K$ is the kinetic energy, and $q_i$ is the heat flux. $q_i = -\kappa \nabla  T$ where $\kappa$ is the thermal conductivity. 
-The Fickian diffusion is used to evaluate the diffusion velocity in the governing equations:
 
+\section{VLE-based CFD framework}
+\label{sec:model:cfd}
+%%In this study, we implemented a low Mach pressure based CFD solver and a high Mach fully compressible CFD solver. Two solvers are developed based on OpenFOAM. Pressure based CFD solver solver is more suitable to investigate the droplet evaporation, and low Mach flow; fully compressible solver is more suaitble to simulation high Mach flow like shock wave. 
+
+
+In this study, we have employed two distinct Computational Fluid Dynamics (CFD) solvers: a low Mach pressure-based solver and a high Mach fully compressible solver. Two solvers are developed based on OpenFOAM. The pressure-based CFD solver is more suitable to investigate droplet evaporation and low Mach flow; the fully compressible solver is more suitable to simulate high Mach flow like shock wave.
+
+\subsection{Pressure-based CFD solver}
+
+%In this study, a high-pressure multiphase flow simulation framework is developed by coupling a pressure-based CFD solver with a VLE solver (the HPn flash): i.e., a VLE-based CFD simulation framework. %The compressible solver used in this research, is the sprayFoam solver in OpenFOAM, an open source C++ library based on the Finite Volume Method. 
+The pressure-based CFD solver is based on multicomponent governing equations, including mixture density equation (i.e., continuity equation), mixture momentum equations, mixture specific internal enthalpy equation, and component mass fraction equation, as follows:
+\begin{align}
+     & \frac{\partial \rho}{\partial t}+\frac{\partial \rho u_i}{\partial x_i}=0 \label{G:start}      \\
+     & \frac{\partial \rho u_i}{\partial t}+\frac{\partial \rho u_i u_j}{\partial x_j}=-\frac{\partial P}{\partial x_i}+\frac{\partial \tau_{ij}}{\partial x_j} \label{Gm}     \\
+     & \frac{\partial \rho h}{\partial t}+\frac{\partial \rho u_i h}{\partial x_i}+\frac{\partial \rho K}{\partial t}+\frac{\partial \rho u_i K}{\partial x_i}-\frac{\partial P}{\partial t}=-\frac{\partial q_i}{\partial x_i} +\frac{\partial \tau_{ij}u_j}{\partial x_i} \\
+     & \frac{\partial \rho Y_m}{\partial t}+\frac{\partial \rho Y_m u_i}{\partial x_i}=\frac{\partial\left(\rho Y_m V_{mi}\right)}{\partial x_i}  \label{G:end}
+\end{align}
+
+where $u_i$ is the velocity, $\rho$ is mixture density, $h$ is specific internal enthalpy, $Y_m$ is the mass fraction of specie $m$, $\tau_{ij}$ is the viscous stress tensor defined by $ \tau_{ij} = -\frac{2}{3}\mu\frac{\partial u_k}{\partial x_k}\delta_{ij} + \mu \left( \frac{\partial u_i}{\partial x_j} +\frac{\partial u_j}{\partial x_i}\right) $, $K$ is the kinetic energy, and $q_i$ is the heat flux, $q_i = -\kappa \nabla  T$ where $\kappa$ is the thermal conductivity. 
+The Fickian diffusion is used to evaluate the diffusion velocity in the governing equations:
 $$ V_{mi} = -\frac{D_m}{X_m}\frac{\partial X_m} {\partial x_i} + \sum^{N}_{s}\frac{Y_s D_s}{X_s}\frac{\partial X_s} {\partial x_i},$$
 where $X_m$, and $D_m$ are the mole fraction and the mixture-averaged diffusion coefficient of specie $m$, respectively. The second correction term is to ensure global mass conservation $\sum^{N}_{m} \rho Y_m V_m = 0$.
 
-\textbf{Fully compressble solver}
-The CFD solver was developed based on the central-upwind scheme \cite{kurganov2001semidiscrete,greenshields2010implementation}. At each time step, the conservative variables $\rho$, $\rho u$, $\rho e$, and $\rho Y_m$ are updated according to the governing equations. The central upwind scheme mentioned is a fully conservative (FC) method. 
 
-To eliminate spurious pressure oscillations, a quasi-conservative approach called the double flux (DF) method \cite{abgrall2001computations,billet2003adaptive,ma2017entropy} is also implemented.
+%In this study, $q_i=-\alpha \nabla h$ where $\alpha$ is the thermal diffusivity. In the relevant systems of this study (mixture: \ce{CH4}/\ce{CO2}/\ce{H2O}, \ce{O2}/\ce{CO2}/\ce{H2O}; $p$: $10^7$ Pa; $T$: 300-700 K), the Lewis numbers ($Le_m=\alpha/D_m$) are obtained using the models mentioned in Sec.~\ref{thermo models}, and their values are in the range of $O(10^3)$ $\sim$ $O(10^5)$. Hence, the contribution of mass diffusion to energy flux is weak, and it is neglected in this study.
+
+The pressure-based CFD solver uses the PIMPLE algorithm \cite{holzmann2016mathematics}, which is a combination of the SIMPLE (semi-implicit method for pressure-linked equations) \cite{patankar1983calculation} and PISO (pressure-implicit split-operator) algorithms \cite{issa1986solution}. The implementation of the PIMPLE algorithm in OpenFOAM has been validated by a lot of researchers around the world for different thermofluid applications~\cite{robertson2015validation, higuera2014three,gaikwad2019openfoam,gamet2020validation,de2017implementation,ashton2019verification}. %Additional validation and verification of the CFD solver are provided in Appendix~\ref{App:vali:CFD}, including two shock tube cases and a jet-in-cross flow case. 
+In the PIMPLE solver, the SIMPLE algorithm is used to predict $\rho$, $u_i$, $h$, and $Y_m$ from Eqs.~(\ref{G:start}-\ref{G:end}) in every time step (i.e., the outer loop in Fig.~\ref{FC_CFD}). Then, thermodynamic properties, including $T$ (mixture temperature) and $\phi$ (defined as $\phi = \frac{\rho} {P}$), are evaluated using thermodynamic model (isobaric and isenthalpic solver, i.e. PH solver) with the input $P$ (from the previous time step), and the updated $h$ and $Y_m$. %The ideal gas model and Peng-Robinson Equation of State, PR-EOS, are provided in the standard OpenFOAM version.
+$\phi$ is used to update $P$ and $\rho$. Then, transport properties, $\mu$, $\lambda$, and $D_m$, are updated accordingly. Then $P$ is updated iteratively by solving the pressure Poisson equation Eq.~(\ref{eq:p2}-\ref{eq:p3}). Velocity $u_i$ and thermodynamic properties ($\rho$, $T$, $\phi$, etc.) are also updated after solving the pressure equation at each iteration step. This inner iteration is from the PISO algorithm, and hence it is called ``PISO loop", as shown in Fig.~\ref{FC_CFD}. When the PISO loop is finished, $\rho$ is updated using $ \rho = \phi P$. With the updated properties, Eqs.~(\ref{Gm}-\ref{G:end}) are solved iteratively to update $u_i$, $h$, and $Y_m$, respectively, using the semi-implicit method (i.e., the predictor step) until it converges. This iteration is from the SIMPLE algorithm, and hence is called ``SIMPLE loop", as shown in Fig.~\ref{FC_CFD}. When the SIMPLE loop is finished, the next time step starts.
+
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.95\linewidth]{flowchart3.png}
+    \centering
+    \caption{Flow chart of the VLE-based CFD solver.}
+    \label{FC_CFD}
+\end{figure}
+
+The compressible pressure Poisson equation in the PIMPLE algorithm is derived from the continuity and momentum equations. In the SIMPLE algorithm, the momentum equations Eq.~(\ref{Gm}) are written into a semi-discretized matrix form:
+\begin{equation}
+    A u+ \sum_{ne} A_{ne} u_{ne} =S+\nabla P \label{p0}
+\end{equation}
+where $u_{ne}$ is the velocity of a neighbor grid point $ne$, $A$ and $A_{ne}$ are the matrix coefficients corresponding to the current and neighbor grid points, respectively. All other terms are denoted as $S$. Rearranging Eq.~(\ref{p0}) gives the following form:
+\begin{align}
+     & u=H^*-\frac{\nabla P}{A}\label{p1}       \\
+     & H^* =\frac{S-\sum_{ne} A_{ne} u_{ne}}{A}
+\end{align}
+Substituting $\phi=\frac{\rho} {P}$ and Eq.~(\ref{p1}) into the continuity equation (Eq.~(\ref{G:start})) gives the pressure Poisson equation:
+\begin{align}
+    \text{Subsonic: }  & \frac{\partial\phi P}{\partial t}+\nabla\cdot \Bigg[\rho \bigg(H^*- \frac{\nabla P}{A}\bigg)\Bigg]=0 \label{eq:p2}         \\
+    \text{Transonic: } & \frac{\partial\phi P}{\partial t}+\nabla\cdot (\phi P H^*)-\nabla\cdot \bigg(\rho \frac{\nabla P}{A}\bigg)=0 \label{eq:p3}
+\end{align}
+%%Eq.~(\ref{eq:p2}) and Eq.~(\ref{eq:p3}) are used for pressure update. Eq.~(\ref{eq:p3}) is obtained by substituting $\phi=\frac{\rho} {P}$ into the second term of Eq.~(\ref{eq:p2}). With this change, the solver is able to capture the compressibility better. Hence, Eqs.~(\ref{eq:p2}) and (\ref{eq:p3}) are used to solve subsonic and transonic flows, respectively.
+
+Eq.~(\ref{eq:p2}) and Eq.~(\ref{eq:p3}) represent the pressure Poisson equations tailored for subsonic and transonic flows, respectively. Eq.~(\ref{eq:p3}) emerges from the substitution of $\phi=\frac{\rho} {P}$ into the second term of Eq.~(\ref{eq:p2}). This alteration serves to enhance the description of the interdependence between pressure and density, thereby enabling the solver to more effectively capture compressibility.
+
+%The new contributions from this study to the OpenFOAM solver and PIMPLE algorithm are summarized here. This study replaces the original thermodynamic model with the VLE + PR-EOS model implemented in this study, as shown in Fig.~\ref{FC_CFD}. Due to the high computational cost of VLE calculation, a novel VLE-based tabulation method is developed to accelerate simulations and make the CFD solver computationally more affordable, as shown in the right box of Fig.~\ref{FC_CFD}. For each simulation, a table is generated to record the solution of TPn flash, density, enthalpy, $c_p$, and transport properties at different temperatures (280-1200 K), pressures (280-700 bar), and \ce{CO2} mole fractions (0.0001-0.9999). Each solution includes, every species' mole fraction in liquid and gas phases, and transport properties. In simulations, a linear approximation method based on eight neighboring records is used for data retrieval. More details about this VLE-based tabulation method is provided in Appendix~\ref{App:tab}. For a large number of components, this tabulation method will demand infeasible memory, and we are developing a new on-the-fly tabulation of VLE solutions using the \textit{in situ} adaptive tabulation (ISAT) approach~\cite{zhang2021multi}, similar to the idea of correlated dynamic evaluation of real fluid properties for supercritical mixing~\cite{yang2017comparison} and combustion~\cite{milan2019time}.
+
+
+
+
+\subsection{Fully compressible solver}
+In the fully compressible solver, the governing equation uses the mixture internal energy equation rather than mixture specific internal enthalpy equation compared to the pressure-based CFD solver. The mixture internal energy equation is formulated as
+\begin{align}
+ %&\frac{\partial \rho}{\partial t}+\frac{\partial \rho u_i}{\partial x_i}=0 \label{Gc},\\
+ %&\frac{\partial \rho u_i}{\partial t}+\frac{\partial \rho u_i u_j}{\partial x_j}=-\frac{\partial P}{\partial x_i}+\frac{\partial \tau_{ij}}{\partial x_j} \label{Gm},\\
+ &\frac{\partial \rho e}{\partial t}+\frac{\partial \rho u_i e}{\partial x_i}+\frac{\partial \rho K}{\partial t}+\frac{\partial \rho u_i K}{\partial x_i}+\frac{\partial  u_i P}{\partial x_i}=-\frac{\partial q_i}{\partial x_i} +\frac{\partial \tau_{ij}u_j}{\partial x_i}
+  %&\frac{\partial \rho Y_m}{\partial t}+\frac{\partial \rho Y_m u_i}{\partial x_i}=\frac{\left(\rho Y_m V_{mi}\right)}{\partial x_i},
+  %\frac{\partial }{\partial x_j}\left(\rho D \sum_m h_m \frac{\partial Y_m}{\partial x_j}\right)-\frac{\partial }
+\end{align}
+where $e$ is specific internal energy. 
+
+
+The fully compressible CFD solver was developed using the central-upwind scheme \cite{kurganov2001semidiscrete,greenshields2010implementation}. At each time step, the conservative variables $\rho$, $\rho u$, $\rho e$, and $\rho Y_m$ are updated directly from the discretized governing equations. The conservative vairable satisfies the conservation law strictly in the calculation process. Hence, the central upwind scheme mentioned is a fully conservative (FC) method. 
+
+As mentioned in Introduction, the use of real fluid EOS introduces spurious pressure oscillations. To eliminate these spurious pressure oscillations, a quasi-conservative approach called the double flux (DF) method \cite{abgrall2001computations,billet2003adaptive,ma2017entropy} is also implemented.
 This method locally freezes the real fluid properties to those of an equivalent calorically perfect gas. During the calculation of the new time step, in each cell, a local calorically perfect-gas EOS is defined using the thermodynamic properties. The pressure field is updated using this newly defined EOS, effectively mitigating the occurrence of spurious pressure oscillations. Subsequently, the remaining thermodynamic properties such as density and species mass fraction are updated using the real-gas EOS and PV flash based on the updated pressure, density, and species mass fraction values. The use of a calorically perfect-gas EOS in the double flux method has been shown by Ma et al. to successfully remove spurious pressure oscillations \cite{ma2017entropy}. To define a locally calorically perfect-gas EOS, an effective specific heat ratio $\gamma^*$ and an effective internal energy $e_0^*$  are formulated as:
 \begin{align}
 \gamma^*& = \frac{\rho c^2}{P},&e_0^*&= e-\frac{Pv}{\gamma^*-1},
 \end{align}
 where $c$ is the speed of sound, and $v$ is the specific volume. %$\gamma^*$ and $e_0^*$ can be calculated from the density, internal energy, and speed of sound, which are obtained from real gas EOS.
-With real-fluid EOS, $\gamma^*$ and $e_0^*$ can be nonlinear functions of the thermodynamic states and may not be constant. The main idea of the double flux method is to freeze $\gamma^*$ and $e_0^*$ in space during each time step advancement. When calculating a flux of a face of a certain cell, the state variable used is not directly from the cell values but reconstructed using $\gamma^*$, $e_0^*$, $P$, and $\rho$. Although this face also belongs to the adjacent cell, its $\gamma^*$, $e_0^*$ of the adjacent cell are not used.  For example, on a one-dimensional mesh, the numerical face flux $F^L_{i+\frac{1}{2}}$ for the cell $i$ at $x_{i+\frac{1}{2}}$ can be expressed as (see Fig.~\ref{DF_CFD})
+With real-fluid EOS, $\gamma^*$ and $e_0^*$ can be nonlinear functions of the thermodynamic states and may not be constant. The main idea of the double flux method is to freeze $\gamma^*$ and $e_0^*$ in space during each time step advancement. When calculating a flux of a face of a certain cell, the state variable used is not directly from the cell values but reconstructed using $\gamma^*$, $e_0^*$, $P$, and $\rho$. Although this face also belongs to the adjacent cell, $\gamma^*$, $e_0^*$ of the adjacent cell are not used.  For example, on a one-dimensional mesh, the numerical face flux $F^L_{i+\frac{1}{2}}$ for the cell $i$ at $x_{i+\frac{1}{2}}$ can be expressed as (see Fig.~\ref{DF_CFD})
 \begin{align}
 F^L_{i+\frac{1}{2}}& = F\left(U^L_{i+\frac{1}{2}},U^R_{i+\frac{1}{2}}\right),&
 U^L_{i+\frac{1}{2}}& = U^L\left(\gamma^*_i,e_{0,i}^*,P,\rho ,Y\right),&
@@ -41,7 +97,7 @@ U^R_{i+\frac{1}{2}}& = U^R\left(\gamma^*_i,e_{0,i}^*,P,\rho ,Y\right),
 where $U^L$ and $U^R$ are conservative variables constructed using calorically perfect-gas EOS. The stencil for constructing conservative variables depends on the interpolation scheme, and the vanLeer method \cite{van1974towards} is used in the current work. In the central-upwind method,
 
 \begin{align} F^L_{i+\frac{1}{2}} &= \alpha u^LU^L + \left(1-\alpha\right)u^R U^R + \omega \left(U^R-U^L\right),&
-\alpha &= \frac{\phi^L}{\phi^L +\phi^R},&
+\alpha &= \frac{\phi^L}{\phi^L +\phi^R},\\
  \omega &= \alpha \left(1-\alpha\right) \left(\phi^L+\phi^R\right)
  \end{align}
 \begin{align} \phi^L& = max\left(c^L+|u^L|,c^R + |u^R|,0\right),&\phi^R &= max\left(c^L-|u^L|,c^R - |u^R|,0\right)
@@ -68,58 +124,7 @@ At each time step, $\rho$, $u$, and $Y_m$ are updated using the central-upwind s
 \label{FC_CFD} 
 \end{figure*}
 
-\textbf{PISO solver}
 
-In this study, a high-pressure multiphase flow simulation framework is developed by coupling a pressure-based CFD solver with a VLE solver (the HPn flash): i.e., a VLE-based CFD simulation framework. %The compressible solver used in this research, is the sprayFoam solver in OpenFOAM, an open source C++ library based on the Finite Volume Method. 
-The CFD solver is based on multicomponent governing equations, including the continuity equation, mixture momentum equations, mixture specific internal enthalpy equation, and transport equations of distinct components in the mixture, as follows:
-\begin{align}
-     & \frac{\partial \rho}{\partial t}+\frac{\partial \rho u_i}{\partial x_i}=0 \label{G:start}                                                                                                                                                                            \\
-     & \frac{\partial \rho u_i}{\partial t}+\frac{\partial \rho u_i u_j}{\partial x_j}=-\frac{\partial p}{\partial x_i}+\frac{\partial \tau_{ij}}{\partial x_j} \label{Gm}                                                                                                   \\
-     & \frac{\partial \rho h}{\partial t}+\frac{\partial \rho u_i h}{\partial x_i}+\frac{\partial \rho K}{\partial t}+\frac{\partial \rho u_i K}{\partial x_i}-\frac{\partial p}{\partial t}=-\frac{\partial q_i}{\partial x_i} +\frac{\partial \tau_{ij}u_j}{\partial x_i} \\
-     & \frac{\partial \rho Y_m}{\partial t}+\frac{\partial \rho Y_m u_j}{\partial x_i}=\frac{\partial }{\partial x_j}\left(\rho \sum_m D_m \frac{\partial Y_m}{\partial x_j}\right) \label{G:end}
-\end{align}
-where $u_i$ is the velocity, $\rho$ and $h$ are the mixture density and internal enthalpy, respectively, $Y_m$ is the mass fraction of component $m$, $p$ is the pressure, $\tau_{ij}$ is the viscous stress tensor, $K$ is the kinetic energy, $q_i$ is the heat flux, and $D_m$ is the mass diffusivity of component $m$.
-In this study, $q_i=-\alpha \nabla h$ where $\alpha$ is the thermal diffusivity. In the relevant systems of this study (mixture: \ce{CH4}/\ce{CO2}/\ce{H2O}, \ce{O2}/\ce{CO2}/\ce{H2O}; $p$: $10^7$ Pa; $T$: 300-700 K), the Lewis numbers ($Le_m=\alpha/D_m$) are obtained using the models mentioned in Sec.~\ref{thermo models}, and their values are in the range of $O(10^3)$ $\sim$ $O(10^5)$. Hence, the contribution of mass diffusion to energy flux is weak, and it is neglected in this study.
-
-The OpenFOAM solver uses the PIMPLE algorithm ~\cite{holzmann2016mathematics}, which is a combination of the SIMPLE (semi-implicit method for pressure-linked equations) \cite{patankar1983calculation} and PISO (pressure-implicit split-operator) algorithms \cite{issa1986solution} based on the primitive variables (e.g., pressure $p$). The implementation of the PIMPLE algorithm in OpenFOAM has been validated by a lot of researchers around the world for different thermofluid applications~\cite{robertson2015validation, higuera2014three,gaikwad2019openfoam,gamet2020validation,de2017implementation,ashton2019verification}. Additional validation and verification of the CFD solver are provided in Appendix~\ref{App:vali:CFD}, including two shock tube cases and a jet-in-cross flow case. In the original solver, the SIMPLE algorithm is used to predict $\rho$, $u_i$, $h$, and $Y_m$ from Eqs.~(\ref{G:start}-\ref{G:end}), in every time step (i.e., the outer loop in Fig.~\ref{FC_CFD}). Then, thermodynamic properties, including $T$ (mixture temperature) and $\phi$, are evaluated from the $p$ in the last step and the updated $h$ and $Y_m$ using thermodynamic model. The ideal gas model and Peng-Robinson Equation of State, PR-EOS, are provided in the standard OpenFOAM version. $\phi$ is used to update $p$ and calculate $\rho$. Then, transport properties are updated accordingly. 
-Here, $\phi$ is defined as
-\begin{align}
-     & \phi = \frac{\rho} {p}, \label{EOS}
-\end{align}
-in which the specific form of $\phi$ depends on the choice of thermodynamics model. Then $p$ is updated iteratively by solving its Poisson equation. Velocity $u_i$ and thermodynamic properties ($\rho$, $T$, $\phi$, etc.) are also updated after solving the pressure equation at each iteration step. This inner iteration is from the PISO algorithm, and hence it is called PISO loop, as shown in Fig.~\ref{FC_CFD}. When PISO loop finshed, $\rho$ is updated using Eq.~(\ref{EOS}). With the updated properties, Eqs.~(\ref{Gm}-\ref{G:end}) are solved iteratively to update $u_i$, $h$, and $Y_m$, respectively, using the semi-implicit method (i.e., the predictor step) until it converges. This iteration is from the SIMPLE algorithm, and hence is called SIMPLE loop, as shown in Fig.~\ref{FC_CFD}. When SIMPLE loop finished, the next time step starts.
-
-
-\begin{figure}[htbp]
-    \centering
-    \includegraphics[width=0.95\linewidth]{flowchart.png}
-    \centering
-    \caption{Flow chart of the VLE-based CFD solver.}
-    \label{FC_CFD}
-\end{figure}
-
-The new contributions from this study to the OpenFOAM solver and PIMPLE algorithm are summarized here. This study replaces the original thermodynamic model with the VLE + PR-EOS model implemented in this study, as shown in Fig.~\ref{FC_CFD}. Due to the high computational cost of VLE calculation, a novel VLE-based tabulation method is developed to accelerate simulations and make the CFD solver computationally more affordable, as shown in the right box of Fig.~\ref{FC_CFD}. For each simulation, a table is generated to record the solution of TPn flash, density, enthalpy, $c_p$, and transport properties at different temperatures (280-1200 K), pressures (280-700 bar), and \ce{CO2} mole fractions (0.0001-0.9999). Each solution includes, every species' mole fraction in liquid and gas phases, and transport properties. In simulations, a linear approximation method based on eight neighboring records is used for data retrieval. More details about this VLE-based tabulation method is provided in Appendix~\ref{App:tab}. For a large number of components, this tabulation method will demand infeasible memory, and we are developing a new on-the-fly tabulation of VLE solutions using the \textit{in situ} adaptive tabulation (ISAT) approach~\cite{zhang2021multi}, similar to the idea of correlated dynamic evaluation of real fluid properties for supercritical mixing~\cite{yang2017comparison} and combustion~\cite{milan2019time}.
-
-\section{Pressure Poisson equation in the PIMPLE algorithm} \label{App:gp}
-    
-    In PIMPLE, the momentum equations (Eq.~(\ref{Gm})) are linearly discretized into the following matrix form:
-    \begin{equation}
-        A u+ \sum_{ne} A_{ne} u_{ne} =S+\nabla P \label{p0}
-    \end{equation}
-    where $u_{ne}$ is the velocity of a neighbor gird point $ne$, $A$ and $A_{ne}$ are the matrix coefficients corresponding to the current and neighbor grid points, respectively, and all other terms are denoted as $S$. Rearranging Eq.~(\ref{p0}) gives the following form:
-    \begin{align}
-         & u=H^*-\frac{\nabla P}{A}\label{p1}       \\
-         & H^* =\frac{S-\sum_{ne} A_{ne} u_{ne}}{A}
-    \end{align}
-    Substituting EOS (i.e., Eq.~(\ref{EOS})) and Eq.~(\ref{p1}) into the continuity equation (Eq.~(\ref{G:start})) gives the pressure Poisson equation:
-    \begin{align}
-        \text{Subsonic: }  & \frac{\partial\phi P}{\partial t}+\nabla\cdot \Bigg[\rho \bigg(H^*- \frac{\nabla P}{A}\bigg)\Bigg]=0 \label{p2}         \\
-        \text{Transonic: } & \frac{\partial\phi P}{\partial t}+\nabla\cdot (\phi P H^*)-\nabla\cdot \bigg(\rho \frac{\nabla P}{A}\bigg)=0 \label{p3}
-        % &\frac{\rho_{*}-\rho_n}{\Delta t}+\frac{\partial \rho_n u_i^n}{\partial x_i}=0\\
-        % &\frac{\rho^{*}u^{*}_i-\rho_n u_i^n}{\Delta t}+\frac{\partial \rho_n u_j^nu^{*}_i}{\partial x_j}=-\frac{\partial P_n}{\partial x_i}+\frac{\partial \tau_{ij}}{\partial x_j}\\
-        % &\frac{\rho^{*}Y^{*}_m-\rho_n Y_m^n}{\Delta t}+\frac{\partial \rho^{*} u_j^{*}Y_m^{*}}{\partial x_i}=\frac{\partial }{\partial x_j}\left(\rho D \sum_m h_m \frac{\partial Y_m^{*}}{\partial x_j}\right)\\
-        % &\frac{\rho^{*}h_{*}-\rho_n h_n}{\Delta t}+\frac{\partial \rho_n u_j^{*}h_{*}}{\partial x_j}+\frac{\partial \rho K}{\partial t}+\frac{\partial \rho_n u_j^{*}K}{\partial x_j}-\frac{\partial P_n}{\partial t}=-\frac{\partial q_i}{\partial x_i} +\frac{\partial \tau_{ij}u_j^{*}}{\partial x_i}\\
-    \end{align}
-    Eq.~(\ref{p2}) and Eq.~(\ref{p3}) are used for pressure update. Eq.~(\ref{p3}) is obtained by substituting EOS (i.e., Eq.~(\ref{EOS})) into the second term of Eq.~(\ref{p2}). With this change, the solver is able to capture the compressibility better. Hence, Eqs.~(\ref{p2}) and (\ref{p3}) are used to solve subsonic and transonic flows, respectively.
 
 \section{Models of thermodynamic and transport properties}
 In the following, the models of thermodynamic and transport properties are presented. VLE solvers are develped to capture the phase sepeartion  using a cubic EoS. The fundamental VLE theory and VLE solvers' algorithm are presented. And dynamic viscosity, thermal conductivity, and mass diffusivity model for high pressure flow are presented.
@@ -159,7 +164,7 @@ The single-phase thermodynamic properties can be obtained using EOS (including t
 \end{align}
 where $M$ is the mixture molar mass, $M_v$ and $M_l$ are vapor phase and liquid phase molar mass, $e$ is specific internal energy. 
 Other mixture thermodynamic properties (e.g. mixture enthalpy, mixture specific heat) can be derived based on these properties. 
-In this research, TP flash, UV flash, and isobaric-isochoric (PV) flash are applied. Specifically, 
+In this research, TP flash, UV flash, isobaric-isochoric (PV) flash, and isobaric and isenthalpic (PH) are applied. Specifically, 
 TP flash solves VLE problems with a given temperature (T) and pressure (P), and is used for the initialization step of the CFD simulation; PV flash solves problems with given pressure (P) and specific volume (V), and is used in the double flux (DF) method (in Sec.~\ref{sec:model:cfd}); UV flash solves problems with given internal energy (U) and specific volume (V), and is used in the fully conservative (FC) scheme. 
 
 \textbf{Isothermal and isobaric (TP) flash:}
@@ -179,7 +184,8 @@ where $x_i$ is the mole fraction of component $i$ in liquid phase, $y_i$ is the 
  
 The fugacity formula of PR EOS is shown below \cite{yi2019multicomponent}:
 \begin{align}
-f_{i,p}=P \chi_i \exp \left\{\frac{b_i}{b_p}(Z_p - 1) - \ln(Z_p-\frac{b_p P}{RT}) - \frac{a_p} {2\sqrt{2} b_p R T} \left(\frac{2 \sum_j {x_j a_j} } {a_p} - \frac {b_i} {b_p}\right) \ln\left[\frac{V_p + \left(1+\sqrt{2}\right)b_p} {V_p + \left(1-\sqrt{2}\right) b_p}\right]\right\}, \label{fuga}
+f_{i,p}=P \chi_i \exp \left\{\frac{b_i}{b_p}(Z_p - 1) - \ln(Z_p-\frac{b_p P}{RT}) - \frac{a_p} {2\sqrt{2} b_p R T} \left(\frac{2 \sum_j {x_j a_j} } {a_p} - \frac {b_i} {b_p}\right) \right. \nonumber\\
+\left.\times \ln\left[\frac{V_p + \left(1+\sqrt{2}\right)b_p} {V_p + \left(1-\sqrt{2}\right) b_p}\right]\right\}, \label{fuga}
 \end{align}
 where $\chi_i$ is the mole fraction of component $i$ in phase $p$ (for liquid, $\chi_i=x_i$; for vapor phase, $\chi_i=y_i$). $Z_p$ is the compressibility factor of phase $p$. $a_p$ and $b_p$ are the mixture energy parameter and mixture co-volume parameter of phase $p$, respectively. Note that specie parameters $a_i$ and $b_i$ only depend on the pure component properties.
 
@@ -187,7 +193,7 @@ Eqs.~(\ref{eq:4}-\ref{fuga}) are solved based on the successive substitution met
 \begin{equation}
 K_{i,wil}=e^{5.373(1+\omega_i)(1-T_{c_i}/T_i)}P_{c_i}/P_i
 \end{equation}
-
+\comment{
 However, when dealing with high-pressure conditions, the Wilson equation may encounter difficulties in accurately capturing phase separation, leading to the generation of trivial single-phase solutions. To overcome this limitation, we have made modifications to the Wilson equation to improve its ability to obtain potential phase separation solutions. It is important to note that species with larger equilibrium constants exhibit a greater inclination to enter the vapor phase, while species with smaller constants tend to remain in the liquid phase. In order to enhance the representation of phase separation, we have further strengthened this inherent tendency. Specifically, we have amplified the impact of larger equilibrium constants by increasing their values, and simultaneously reduced the influence of smaller constants by decreasing their values.
 
 \begin{equation} 
@@ -204,7 +210,7 @@ K_{i,init} =
 In comparison to the Wilson equation, the newly proposed initial $K$ values exhibit a larger ratio between the maximum and minimum equilibrium constants, and move the product of the two values closer to one. This adjustment provides an initial guess that has stronger phase separation tendencies.
 In the case of three-component systems, where the species with intermediate $K_{init}$ values can potentially exist in either the liquid or gas phase, an inappropriate initial guess can lead to incorrect solutions. To address this issue, we introduce a modification by taking the reciprocal of the intermediate $K_{init}$ value while keeping the other $K_{init}$ values unchanged. This modified array serves as an additional initial condition for the calculation process.
 
-When multiple initial conditions are employed, it is possible to obtain multiple solutions for the system. To select the final solution from these options, the conventional approach involves choosing the solution with the lowest Gibbs free energy. However, during our actual calculations, we encountered a unique scenario where an exception arose. In this case, although a solution may possess the minimum Gibbs free energy, the compressibility factor ($Z$) of both its liquid and gas phases approaches 1. This implies that the phases resemble an ideal gas, and the established phase equilibrium occurs between two immiscible gaseous phases. While such a solution can be obtained computationally, it is not physical and can lead to computation failures. Through simulation testing in Sec.~\ref{sec:result}, we have identified and ruled out solutions wherein the compressibility factor ($Z$) exceeds 0.87 in the liquid phase. This exclusion criterion ensures the proper functioning of the VLE solver and helps prevent the occurrence of non-physical solutions.
+When multiple initial conditions are employed, it is possible to obtain multiple solutions for the system. To select the final solution from these options, the conventional approach involves choosing the solution with the lowest Gibbs free energy. However, during our actual calculations, we encountered a unique scenario where an exception arose. In this case, although a solution may possess the minimum Gibbs free energy, the compressibility factor ($Z$) of both its liquid and gas phases approaches 1. This implies that the phases resemble an ideal gas, and the established phase equilibrium occurs between two immiscible gaseous phases. While such a solution can be obtained computationally, it is not physical and can lead to computation failures. Through simulation testing in Sec.~\ref{sec:result}, we have identified and ruled out solutions wherein the compressibility factor ($Z$) exceeds 0.87 in the liquid phase. This exclusion criterion ensures the proper functioning of the VLE solver and helps prevent the occurrence of non-physical solutions. }
 
 \begin{figure}[htbp]
 \centering
@@ -216,11 +222,11 @@ When multiple initial conditions are employed, it is possible to obtain multiple
 Once the initial guess is obtained, we proceed to solve the Rachford-Rice equation (Eq.~\ref{eq:5}) using the Newton-Raphson iteration method to determine the vapor mole fraction $\beta$. Subsequently, $x_i$ and $y_i$ can be calculated using Eqs.~\ref{eq:5-2}. The next step involves evaluating the fugacity using Eq.~\ref{fuga} and examining whether fugacity equilibrium has been achieved (i.e., $\left|f_{i,l}/f_{i,g}-1\right| < tol $). If equilibrium has not been reached, we update the equilibrium constant $K_i$ by multiplying it with the fugacity ratio $K_i=K_i \times f_{i,l}/f_{i,g}$ and then return to the step of solving the Rachford-Rice equation once again. This iterative process continues until the error falls below a specified tolerance $tol$, and $tol$ is $10^-8$ in this work. 
 
 
-\textbf{PV flash and UV flash:}
-The PV flash and UV flash solvers are developed based on the TP flash method, utilizing iteration methods. For both solvers, initial guesses (T for PV flash; T and P for UV flash) are obtained from the cell value in the previous time step, and a TP flash problem is solved in each iteration. During the iteration process, T and/or P are updated to find a better solution. After multiple iterations, when the error (PV flash error: $|\rho - \rho_0|$, UV flash error: $|e - e_0|$ and $|\rho - \rho_0|$) falls below a specified tolerance, the solver returns the solution of TP flash problem.
+\textbf{PV flash, UV flash, and PH flash:}
+The PV flash, UV flash, and PH solvers are developed based on the TP flash method, utilizing iteration methods. For three solvers, initial guesses (T for PV flash and PH flash; T and P for UV flash) are obtained from the cell value in the previous time step, and a TP flash problem is solved in each iteration. During the iteration process, T and/or P are updated to find a better solution. After multiple iterations, when the error (PV flash error: $|\rho - \rho_0|$, UV flash error: $|e - e_0|$ and $|\rho - \rho_0|$, PH flash solver: $|h - h_0|$, where $h$ is mixture enthalpy $h=e+p/\rho$) falls below a specified tolerance, the solver returns the solution of TP flash problem.
 
 
-In the PV flash solver, as the pressure (P) is already provided as input, only the temperature (T) needs to be guessed and updated during the iteration. To avoid the computational cost of computing derivatives in the Newton-Raphson method, a secant method is employed to update T.
+In the PV flash solver and PH flash solver, as the pressure (P) is already provided as input, only the temperature (T) needs to be guessed and updated during the iteration. To avoid the computational cost of computing derivatives in the Newton-Raphson method, a secant method is employed to update T.
 
 
 In contrast, the UV flash solver requires simultaneous guessing and updating of two variables,  temperature (T) and pressure (P), during the iteration. Therefore, the secant method cannot be directly applied. Instead, the Newton-Raphson method is used to solve UV flash problems. The required Jacobian matrix is obtained using the analytical framework described in Sec.~\ref{sec:analytical}.
@@ -415,7 +421,7 @@ The parameter $\Phi$ are evaluated using Table \ref{phi_table}. Table \ref{phi_t
 \end{table}
 
 
-
+\comment{
  \section{VLE-based tabulation method} \label{App:tab} % and its verification
     
     A tabulation method is used to accelerate VLE model computation. This method is used to replace the computationally expensive on-the-fly TPn flash. Within the given range of temperature, pressure, and mass fraction, TPn problems are solved on the evenly spaced grid points. Then the thermodynamic proprieties (including $\rho$, $h$, $c_v$, $c_p$) and  transport  proprieties (including $D_m$, $\mu$, $\alpha$) are evaluated using TPn solutions. 
@@ -458,7 +464,7 @@ The parameter $\Phi$ are evaluated using Table \ref{phi_table}. Table \ref{phi_t
     \end{table}
 
 
-
+    }
 
 
 \comment{
