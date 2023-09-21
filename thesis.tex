@@ -27,6 +27,9 @@
 \usepackage{physics}
 \usepackage{isomath}
 \usepackage{subfigure}
+%\usepackage{algpseudocode}
+\usepackage[]{algorithm2e}
+%\usepackage[UTF8]{ctex}
 
 \newcommand{\comment}[1]{}
 %\newcommand{\mycolor}{black}
@@ -57,6 +60,8 @@
     chapters/sCO2,
     chapters/sCO2_bk,
     chapters/ISATVLE,
+    chapters/parISAT,
+    chapters/parISAT_bk,
     chapters/ISATVLE_bk,
     chapters/science,
     chapters/experiment,
@@ -83,12 +88,16 @@
 % Now lets include the body of the document...
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \include{chapters/intro}
-%\include{chapters/math}
-%\include{chapters/verification}
-%\include{chapters/tabulation}
+\include{chapters/math}
+\include{chapters/verification}
+\include{chapters/tabulation}
+\include{chapters/parISAT}
+%\include{chapters/parISAT_bk}
 
-%\include{chapters/sCO2}
-%\include{chapters/ISATVLE}
+\include{chapters/sCO2}
+\include{chapters/ISATVLE}
+
+
 
 %\include{chapters/sCO2}
 %\include{chapters/ISATVLE}
