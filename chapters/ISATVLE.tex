@@ -72,7 +72,22 @@ Fig.~\ref{TML_3D_performace} shows the performance of the ISAT-VLE method in the
 \label{TML_3D_performace} 
 \end{figure}
 
+\comment{
+    A grid convergence study is conducted using the configuration of Case 1, as shown in Appendix~\ref{App:TML}. The development of vortices is depicted in Fig.~\ref{TML_3D_evo}. At $t = 1\times 10^{-7}$ s, the introduction of velocity perturbation in the initial condition causes distortion of the interface. Due to the Kelvin-Helmholtz (K-H) instability, three vortices form on the interface at $1.5 \times 10^{-7}$ s. Within the vortex center, a low-pressure area is generated, and acoustic waves propagate outward continuously, which can be clearly seen in the pressure contours at $2\times 10^{-7}$ s. The quantity $\alpha=\beta(1-\beta)$ serves as an indicator of the two-phase interface and phase separation. The $\alpha$ contours reveal that at these conditions, phase separation is highly pronounced at the interface between \ce{n-C12H26} and \ce{N2}.%, necessitating VLE modeling. 
 
+
+    \begin{figure}[htbp]
+        \centering
+        \includegraphics[width=0.65\linewidth]{TML_evo2.png}
+        \caption{The vortex development in the 3D transcritical temporal mixing layer (TML): three snapshots at $t = 1\times 10^{-7}, 1.5 \times 10^{-7}, 2\times 10^{-7}$ s (from left to right) are shown in the figure.}
+        \label{TML_3D_evo} 
+        \end{figure}
+        
+        Fig.~\ref{TML_3D_err} shows the temporal evolution of pressure and temperature errors. These values are obtained by calculating the absolute difference between the results obtained with the ISAT-VLE method and those obtained without it (e.g., $|T_{ISAT}-T_{noISAT}|$). As shown in Fig.~\ref{TML_3D_err}, both the temperature and pressure errors exhibit a gradual and slow increase over time. However, the overall error remains at a very low level. The temperature deviation is primarily concentrated at the interface, with a maximum deviation of less than 5 K and a relative error of less than 1\%. The pressure error is more widespread due to the propagation of acoustic waves, but the majority of errors remain below 0.1 bar. The maximum error occurs at the interface and reaches approximately 0.2 bar. This error level is fully acceptable for the simulation, considering the average ambient pressure of around 50 bar, and the relative pressure error remains within 0.5\%.
+
+
+
+}
 
 
 

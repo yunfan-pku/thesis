@@ -400,7 +400,7 @@ The normalized ISAT error for the case with $k=3\times10^{-2}$ is depicted in Fi
 
 \paragraph{Double flux scheme's behavior in 2D simulations}
 \label{sec:DF}
-We proceeded to perform a simulation using the double flux (DF) scheme to compare its behavior with the FC scheme. The ISAT-VLE error tolerance is set as $(T_{tol},e_{tol},\beta_{tol},c_{tol})$ $= k (10^2 \text{K}, 10^4 \text{J}, 1, 10^2\text{m/s})$. Similar to the FC method,  performance improves when a larger tolerance is employed (Fig.~\ref{droplet_PE_D}(a)), but in comparison, the DF scheme runs even faster. Fig.~\ref{droplet_PE_D}(b) displays the normalized error (at $k=3 \times 10^{-2}$) It can be observed that the average error is controlled three orders of magnitude below the error tolerance. Although the maximum error cannot be entirely controlled within the tolerance due to the high non-linearity of the VLE system, the overall error remains within an acceptable range. The error and performance are listed in Tab.~\ref{droplet_DF_table}. When compared to the FC solver, the ISAT implementation in the DF solver achieves larger speedup factors ranging from 40 to 60, and exhibits significantly smaller pressure errors but slightly larger temperature errors. This discrepancy arises because, in the DF method, the pressure is directly obtained from the CFD solver, and its error is only influenced by the tabulation error of other properties, resulting in minimal pressure error. However, the DF scheme introduces stronger temperature oscillations (as depicted in Fig.~\ref{droplet_DC_compare} and discussed below), which contribute to an increased temperature error. Additionally, the double flux technique suppresses pressure oscillations, simplifying the thermal state and consequently leading to a larger speedup factor.
+We proceeded to perform a simulation using the double flux (DF) scheme to compare its behavior with the FC scheme. The error tolerance is set as $(T_{tol},e_{tol},\beta_{tol},c_{tol})= k (10^2 \text{K}, 10^4 \text{J}, 1, 10^2\text{m/s})$. Similar to the FC method,  performance improves when a larger tolerance is employed (Fig.~\ref{droplet_PE_D}(a)), but in comparison, the DF scheme runs even faster. Fig.~\ref{droplet_PE_D}(b) displays the normalized error (at $k=3 \times 10^{-2}$) It can be observed that the average error is controlled three orders of magnitude below the error tolerance. Although the maximum error cannot be entirely controlled within the tolerance due to the high non-linearity of the VLE system, the overall error remains within an acceptable range. The error and performance are listed in Tab.~\ref{droplet_DF_table}. When compared to the FC solver, the ISAT implementation in the DF solver achieves larger speedup factors ranging from 40 to 60, and exhibits significantly smaller pressure errors but slightly larger temperature errors. This discrepancy arises because, in the DF method, the pressure is directly obtained from the CFD solver, and its error is only influenced by the tabulation error of other properties, resulting in minimal pressure error. However, the DF scheme introduces stronger temperature oscillations (as depicted in Fig.~\ref{droplet_DC_compare} and discussed below), which contribute to an increased temperature error. Additionally, the double flux technique suppresses pressure oscillations, simplifying the thermal state and consequently leading to a larger speedup factor.
 
 
 
@@ -429,7 +429,7 @@ We proceeded to perform a simulation using the double flux (DF) scheme to compar
 	\label{droplet_PE_D}
 \end{figure}
 
-To mitigate the spurious oscillation resulting from real fluid effects, quasi-conservative methods are commonly employed to suppress or eliminate these oscillations. One popular approach among them is the DF method. However, it is important to note that these methods come at the cost of breaking the energy conservation law. In Fig.~\ref{droplet_DC_compare}, a comparison is made between the DF and the FC results in terms of pressure and temperature along the centerline in the x direction. This comparison is conducted when the shock wave has not yet reached the droplet position, allowing for separate analysis of the effects of the two methods on the shock wave and droplet. Without the DF method, the real fluid effect generates pressure and temperature oscillations at the droplet interface. On the other hand, the DF method successfully eliminates pressure oscillations at the droplet interface, which is the intended goal of this scheme's design. However, in order to achieve this, energy is added/removed to the discontinuity, resulting in larger temperature oscillations at the droplet interface. Additionally, breaking the energy conservation law introduces larger oscillations at the shock wave front. While some researchers argue that the energy introduced by the DF method decreases as the mesh is refined, it is often impractical to use a fine enough mesh to solve the droplet interface for 2D or 3D simulations. Therefore, breaking the energy conservation law is not considered an optimal solution.
+To mitigate the spurious oscillation resulting from real fluid effect, quasi-conservative methods are commonly employed to suppress or eliminate these oscillations. One popular approach among them is the DF method. However, it is important to note that these methods come at the cost of breaking the energy conservation law. In Fig.~\ref{droplet_DC_compare}, a comparison is made between the DF and the FC results in terms of pressure and temperature along the centerline in the x direction. This comparison is conducted when the shock wave has not yet reached the droplet position, allowing for separate analysis of the effects of the two methods on the shock wave and droplet. Without the DF method, the real fluid effect generates pressure and temperature oscillations at the droplet interface. On the other hand, the DF method successfully eliminates pressure oscillations at the droplet interface, which is the intended goal of this scheme's design. However, in order to achieve this, energy is added/removed to the discontinuity, resulting in larger temperature oscillations at the droplet interface. Additionally, breaking the energy conservation law introduces larger oscillations at the shock wave front. While some researchers argue that the energy introduced by the DF method decreases as the mesh is refined, it is often impractical to use a fine enough mesh to solve the droplet interface for 2D or 3D simulations. Therefore, breaking the energy conservation law is not considered an optimal solution.
 
 When the pressure oscillation in the simulation is substantial enough to cause the solution to diverge, it is preferable to allow for larger temperature oscillations while eliminating pressure oscillations. On the other hand, in simulations where temperature does not play a crucial role, the DF scheme can also be a suitable option. Conversely, when the simulation results are highly sensitive to temperature, the FC scheme is a better choice. This is precisely why we predominantly utilize the FC methods in our simulations, as the VLE process is particularly sensitive to temperature at the interface.
 
@@ -553,12 +553,19 @@ The 3D transcritical shock-droplet interaction simulations with a single-compone
 
 In the preceding section, we evaluated the performance of the ISAT-VLE model. We observed substantial acceleration in serial computation, yet encountered a decline in ISAT's performance when employing parallel computation. Given the imperative need to handle the extensive load of CFD calculations, parallel computing has become indispensable. Consequently, the diminished performance of ISAT in parallel computing scenarios imposes constraints on its applicability.Consequently, the diminished performance of ISAT in parallel computing scenarios imposes constraints on its applicability.
 
-The original ISAT was not designed for parallel computation. When using original ISAT parallel computation, every process needs to maintain its own ISAT table, solve the same chemical ODE, and write repeated records into the table. Moreover, in simulations, substantial fluctuations in physical properties typically manifest in localized regions, such as shock waves and contact discontinuities. Compared to other regions, the computation in these regions tends to add more records in the ISAT table, often leading to pronounced imbalances when directly employing ISAT in parallel simulations. Researchers tried to address ISAT parallelization challenges in previous works\cite{lu2009computationally,wu2018parallel}, primarily by attempting to partition the computational workload within the computing domain into discrete chunks. They utilize the MPI communication mechanism to allocate these task chunks to individual MPI processes, ultimately achieving a more equitable distribution of computational load. However, the effectiveness of this approach hinges heavily on the spatial characteristics of the flow and the specific domain decomposition. Furthermore, the substantial volume of MPI communication involved can adversely impact ISAT performance.
+The original ISAT was not designed for parallel computation. When using original ISAT parallel computation, every process needs to maintain its own ISAT table and write repeated records into the table. Moreover, in simulations, substantial fluctuations in physical properties typically manifest in localized regions, such as shock waves and contact discontinuities. Compared to other regions, the computation in these regions tends to add more records in the ISAT table, often leading to pronounced imbalances when directly employing ISAT in parallel simulations. Researchers tried to address ISAT parallelization challenges in previous works\cite{lu2009computationally,wu2018parallel}, primarily by attempting to partition the computational workload within the computing domain into discrete chunks. They utilize the MPI communication mechanism to allocate these task chunks to individual MPI processes, ultimately achieving a more balanced distribution of computational load. However, their allocation method is fixed and unable to adapt to dynamically changing computing needs. The effectiveness of this approach hinges heavily on the spatial characteristics of the flow and the specific domain decomposition. Furthermore, the substantial volume of MPI communication involved can adversely impact ISAT performance.
 Hence, it is difficult for existing methods to make full use of computing resources.
 
 
-In this study, we proposed a parallel ISAT, which combines a shared-memory ISAT table with local ISAT tables and has a loading balancing algorithm to fully utilize the computation resources. Shared-memory ISAT table is implemented using the shared memory in MPI-3. To work with the shared-memory architecture, a concurrent tree is developed to store the ISAT table and optimized for high-concurrency and high-performance reads, and low-concurrency writes.
+In this study, we proposed a parallel ISAT (see in Fig.~\ref{MPI_arch2}), which combines a shared-memory ISAT table with local ISAT tables and has a loading balancing algorithm to fully utilize the computation resources. Shared ISAT can fully utilize the computation results from individual processes, which enhances the perfoamce of load balancing algorithm. Shared-memory ISAT table is implemented using the shared memory in MPI-3. To work with the shared-memory architecture, a concurrent tree is developed to store the ISAT table and optimized for high-concurrency and high-performance reads, and low-concurrency writes.
 
+
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=0.9\linewidth]{MPI arch3.png}
+	\caption{Schematic of the proposed parallel ISAT method.}
+	\label{MPI_arch2}
+\end{figure}
 
 %a concurrency data structure (binary tree) to reduce the memory requirement and optimize the computing speed, and eventually improve the computational speed and accuracy in turbulent combustion simulation. The parallel ISAT is implemented using the shared memory in MPI-3. To work with the shared-memory architecture, a concurrent tree is developed to store the ISAT table and optimized for high-concurrency and high-performance reads, and low-concurrency writes. 2D counter-flow diffusion flame simulations are conducted to test the performance of parallel ISAT.
 
@@ -594,21 +601,20 @@ When using the MPI model, we found the following three problems:
 %我们提出了一个解决方案， 我们在一开始申请一整块内存，对于整块内存来说虽然在不同进程中地址不同，但是整块地址上的偏移量是相同的，我们使用相对于首地址的偏移量来代替地址。我们自己实现了slab allocator，来自己管理内存，共享内存只在代码开始运行时进行一大块内存。之后不在申请共享内存。
 
 \begin{description}
-	\item [1. Dynamic shared memory allocation] Dynamic shared memory allocation in the MPI standard is a collective call executed by all processes, which means that a single process cannot allocate shared memory. However, when using the ISAT method, every processor should be able to update the table independently. If every update requires all the processes to allocate memory together, the efficiency of the whole system will be severely slowed down.
+	\item [1. Dynamic shared memory allocation] Dynamic shared memory allocation in the MPI model is a collective call executed by all processes, which means that a single process cannot allocate shared memory. However, when using the ISAT method, every processor should be able to update the table independently. If every update requires all the processes to allocate memory together, the efficiency of the whole system will be severely slowed down.
 	\item [2. Memory address inconsistency] In modern operating systems, each process has its own virtual address space, which causes that for one block of physical memory, it can have different addresses in two processes. MPI SHM model is process-based rather than thread-based (in contrast, OpenMP is thread-based). Hence, the addresses of shared memory cannot be passed across processes, which makes the pointer cannot be used. ISAT is built based on a binary tree, which depends on the indexing method of the pointer.
 	\item [3. Synchronization] Using shared memory, synchronization is important. If shared data are not protected properly, unexpected errors could happen, but most existing methods are designed for thread-based model.
 	      %MPI standard does not provide flexible and efficient methods to protect shared memory.
 \end{description}
 
 
-When shared memory is employed solely for the purpose of optimizing data communication time, the problems mentioned above do not come into play. However, when the objective extends to sharing intricate data structures and executing highly concurrent queries, it becomes imperative to address these shared memory-related issues. In response to these problems, we introduce a comprehensive set of memory management techniques:
+When shared memory is employed solely for the purpose of optimizing the communication time of data blocks, the problems mentioned above do not come into play. However, when the objective extends to sharing intricate data structures and executing highly concurrent queries, it becomes imperative to address these shared memory-related issues. In response to these problems, we introduce a comprehensive set of memory management techniques:
 
 
 \begin{description}
 	\item [1.] Instead of allocating dynamic shared memory when needed, we allocate a big chunk of shared memory at the beginning, and we implemented a custom memory allocator (slab allocator \cite{bonwick1994slab}) to manage the shared memory. The slab allocator can provide efficient memory allocation for different sizes of objects and is now widely used by many Unix and Unix-like operating systems including FreeBSD and Linux.
 	\item [2.] Although a memory Byte in two processes may have distinct virtual addresses, the address offsets between memory Bytes from the same block remain consistent across processes. This consistency enables us to employ the offset relative to the initial address of the entire memory block as new addresses that can be used by shared memory
-	\item [3.] C++ provides build-in atomic variables. The synchronization for atomic variables is done at the instruction level. As a result, Atomic variables are safe in a multi-threading environment as well as a multi-process environment.
-	      Based on the atomic variable, mutual exclusion locks (mutex) are easy to implement. A mutex is a synchronization primitive: a mechanism that enforces limits on access to a resource when there are many threads/processes of execution. With mutexes, shared data can be protected from being simultaneously accessed by multiple threads/processes.
+	\item [3.] C++ provides build-in atomic variables. The synchronization for atomic variables is done at the instruction level. As a result, Atomic variables are safe in a multi-threading environment as well as a multi-process environment. Based on the atomic variable, mutual exclusion locks (mutex) are easy to implement. A mutex is a synchronization primitive: a mechanism that enforces limits on access to a resource when there are many threads/processes of execution. With mutexes, shared data can be protected from being simultaneously accessed by multiple threads/processes.
 
 	      % which is free from data races; that is, if one thread writes to an atomic object while another thread reads from it, the behavior is well-defined. Although this technique is used on multi-thread rather than multi-process code, we tested and found atomic variables also work in MPI. Based on the atomic variable, mutual exclusion locks (mutex) are easy to implement. A mutex is a synchronization primitive: a mechanism that enforces limits on access to a resource when there are many threads of execution. With mutexes, shared data can be protected from being simultaneously accessed by multiple threads.
 \end{description}
@@ -618,34 +624,47 @@ When shared memory is employed solely for the purpose of optimizing data communi
 
 
 \subsubsection{Concurrent binary tree}
-A challenge of developing the proposed shared-memory parallel ISAT is to ensure high efficiency and thread safety when manipulating the records in the table. A concurrent binary tree is implemented to ensure high performance. In simulations, most of the query can be directly retrieved from the table, which is a read operation.
-Write operations (growth and addition) are performed when the existing data is insufficient. %Since there are far fewer read operations than writes operations, the concurrent binary tree, needs to be optimized for high-concurrency and high-performance reads, and low-concurrency writes.
+%%A challenge of developing the proposed shared-memory parallel ISAT is to ensure high efficiency and safety when manipulating the records in the table. A concurrent binary tree is implemented to ensure high performance. In simulations, most of the query can be directly retrieved from the table, which is a read operation. Write operations (growth and addition) are performed when the existing data is insufficient. %Since there are far fewer read operations than writes operations, the concurrent binary tree, needs to be optimized for high-concurrency and high-performance reads, and low-concurrency writes.
+%%A challenge of developing the shared-memory ISAT is to ensure high efficiency and safety when manipulating the records in the table. A concurrent binary tree is implemented to ensure high performance. In simulations, most of the query can be directly retrieved from the table, which is a read operation. Write operations (growth and addition) are performed when the existing data is insufficient. Multiple reading operations can be performed simultaneously without causing corruption, but making writing operations paralleled is much more difficult. Improper ways can lead to unexpected errors. To ensure high efficiency and thread safety, the concurrent binary tree is designed to have the features below.
 
-Multiple reading operations can be performed simultaneously without causing corruption, but making writing operations paralleled are much more difficult. Improper ways can lead to unexpected errors. To ensure high efficiency and thread safety, the concurrent binary tree is designed to have the features below.
+Developing a shared-memory ISAT presents a notable challenge: maintaining both high efficiency and data integrity when manipulating records within the table. To meet this challenge head-on, our solution incorporates a concurrent binary tree, a fundamental component that underpins the system's high-performance architecture.
+
+In the simulations, the majority of queries involve read operations, where data is retrieved directly from the table. This read-heavy workload is well-suited for concurrent access, allowing multiple read operations to occur simultaneously without risk of data corruption. However, the complexity lies in parallelizing write operations (growth and addition). Implementing these write operations in a concurrent manner is considerably more intricate, as improper approaches can lead to unexpected errors and data inconsistencies.
+
+To ensure both high efficiency and thread safety, the concurrent binary tree is meticulously designed with the following key features:
 
 \begin{itemize}
-	\item Reads are lock-free (reading processes never block, even while writes are ongoing)
+	\item Reads are always lock-free (reading processes never block, even while writes are ongoing)
 	      %\item Reading processes always see a consistent version of the tree
 	\item Reading processes do not block writing processes
 	\item Processes trying to write the same tree leaf block each other but never block reading threads
 \end{itemize}
 
+To realize the feature above, we employ a mutex mechanism to ensure the integrity of our shared-memory ISAT system during write operations. Notably, these write operations lock only the specific nodes affected at the lowest level of the tree. Consequently, multiple write operations can be simultaneously executed at distinct tree nodes, enhancing system efficiency and concurrency.  For better performance, the ISAT allows reads and writes to happen simultaneously. Three techniques are used:
 
-A mutex is used to block the node when a writing operation is executing. Hence, mutliple writing operation can be conducted at different tree nodes. As shown in the features, for better performance, the ISAT allows reads and writes to happen simultaneously. To achieve this, three techniques are used for this purpose: 1. During writing, the structure of the binary tree needs to be accessible. Specifically, addition and growth operations are shown in Fig.\ref{MPI_op}. When updating the tree structure, edges that do not affect the search are updated first (Fig.\ref{MPI_op}-2). After the other updates are completed, the last remaining parts are updated with an atomic operation (Fig.\ref{MPI_op}-3). This way, the tree structure is always complete for read operations.
-2. Rather than update the data in place, all changes need to be first written to a new tree node or tree leaf, then linked to the tree. Specifically, the growth operation of ISAT can be completed by directly modifying the record, in order to protect the integrity of the data, we will first save the updated result on a new leaf, and then replace the original leaf (Fig.\ref{MPI_op}-1 Growth).
-3. After tree nodes and tree leaves are removed, they still could be read by some processes. Thus, removed data need to be kept unchanged until these reads are finished. Specifically, the deteted red record in Fig.\ref{MPI_op}-3 Growth operation are kept. In this work, all removed memory is kept unchanged until the calculation of the current time step is finished.
+%%To achieve the feature above, a mutex is used to block the node when a writing operation is executing. Since write operations only locks the affected node at the lowest level, multiple writing operation can be conducted at different tree nodes. As shown in the features, for better performance, the ISAT allows reads and writes to happen simultaneously. Three techniques are used for this purpose: 
+\begin{description}
+	\item [Atomic Restructuring Operation:] During writing, the structure of the binary tree needs to be accessible. Addition and growth operations are shown in Fig.\ref{MPI_op}. To preserve the structural integrity of the tree, updates that do not impact ongoing searches are prioritized (Fig.\ref{MPI_op}-2).  Subsequently, once all other updates are completed, the remaining modifications are executed through an atomic operation (Fig.\ref{MPI_op}-3). This process ensures that the tree structure remains consistently complete for concurrent read operations.
+
+	\item [Copy-Based Data Modification:] Rather than directly update the data in place, all changes need to be first written to a new tree node or tree leaf, which is subsequently linked to the tree. Specifically, the ISAT's growth operation can be carried out by directly modifying a record. However, to safeguard data integrity, the updated result is first stored in a new leaf, which then replaces the original leaf (Fig.\ref{MPI_op}-1 Growth). This approach allows data modification to be transformed into a restructuring operation, and conducted atomically using the technique above.
+
+	\item [Deferred Data Deletion:] Even after the removal of tree nodes and tree leaves, it is possible that some processes may still attempt to read this removed data. To accommodate such scenarios, deleted data is retained in its original form until all relevant read operations have been completed. Specifically,  the deleted red record (in Fig.\ref{MPI_op}-3 Growth operation) is preserved until it is no longer needed. All removed memory remains unchanged until the computation of the current time step has been finalized.
+\end{description}
+
+
+
 
 \begin{figure}[htbp]
 	\centering
 	\includegraphics[width=0.9\linewidth]{tree_update.png}
-	\caption{Schematic of concurrent binary tree opration. }
+	\caption{Schematic of concurrent binary tree opration.}
 	\label{MPI_op}
 \end{figure}
 
 
-Although the tree structure supports multiple writes and reads at the same time, memory allocator is still a bottleneck. To handle this before each timestep, the allocator allocates a certain number of tree leaves and tree nodes for each process. In every timestep, we prioritize the utilization of pre-allocated memory, resorting to memory allocation through the allocator only when the pre-allocated memory is exhausted. This one-time allocation of a large memory block is exceptionally fast. By configuring an appropriate size for the pre-allocated memory, it becomes possible to eliminate the need for direct allocator usage in the majority of operations, without incurring excessive memory waste. This approach helps maintain a high level of parallelism throughout the entire algorithm.
+Although the tree structure supports multiple writes and reads at the same time, memory allocator is still a bottleneck. To handle this, before each timestep, the allocator allocates a certain number of tree leaves and tree nodes for each process. In every timestep, we prioritize the utilization of pre-allocated memory, resorting to memory allocation through the allocator only when the pre-allocated memory is exhausted. This one-time allocation of a large memory block is exceptionally fast. By configuring an appropriate size for the pre-allocated memory, it becomes possible to eliminate the need for direct allocator usage in the majority of operations without incurring excessive memory waste. This approach helps maintain a high level of parallelism throughout the entire algorithm.
 
-Using the above method, we create a concurrent binary tree to store the ISAT table in each compute node. In this way, the data within a node can be centrally stored. Space wastage in multiple ISAT tables is avoided and unnecessary double calculations are reduced.
+%%Using the above methods, we create a concurrent binary tree to store the ISAT table in each compute node. In this way, the data within a node can be centrally stored. Space wastage in multiple ISAT tables is avoided and unnecessary double calculations are reduced.
 
 By employing the aforementioned approach, we establish a concurrent binary tree structure to store the ISAT table within each compute node. Through this method, all records within a node can be stored centrally, effectively mitigating space wastage in oringal ISAT method in which every process has its own ISAT table, and this way also reduces redundant calculations.
 
@@ -657,25 +676,24 @@ In comparison to the original method, this approach has its drawbacks, particula
 
 %对于上一节提到的redundant record deletion methods，那个数据结构难以实现高并发的版本，因此我们使用了一个简化的版本，我们在每次使用一个记录后记录调用的时间，由于这种读写在同一个时间不长内被写入的值都是一样的，不存在数据竞争的问题，此过程不会降低速度。我们在每一定的时间步长后，根据最近调用的时间将所有的记录排序，然后使用之前相同的条件做删除。此方法相比于动态方法的缺点是，无法严格保证条件的满足，而且排序是针对所有数据的，动态方法是只对增量数据有改动。当数据量很大的时候这一方法会展现缺点，但是因为表格大小在此应用中控制的较好，不会带来明显的性能损失。
 
-\begin{figure}[htbp]
-	\centering
-	\includegraphics[width=0.9\linewidth]{MPI arch.png}
-	\caption{Schematic of the proposed parallel ISAT method.}
-	\label{MPI_arch2}
-\end{figure}
+
 
 \subsubsection{Load balancing}
 
 
+To handle load imbalance, some works \cite{lu2009computationally,wu2018parallel} They redistribute workload through MPI communication. However, their allocation method is fixed and unable to adapt to dynamically changing computing needs. Furthermore, the substantial volume of MPI communication involved can adversely impact ISAT performance.
+%在并行的ISAT中
 
-In contrast, our approach in this study involves sharing ISAT tables in memory, obviating the need to account for flow spatial characteristics and domain decomposition during task allocation. When distributing tasks, we bundle multiple tasks into batches (batch size is 100 in this work)and distribute them across the MPI processes to maximize the utilization of all available computing resources. The load-balancing algorithm employed is outlined as follows:
+In contrast, our approach in this study involves sharing ISAT tables in memory, obviating the need to account for flow spatial characteristics and domain decomposition during task allocation. When distributing tasks, we bundle multiple tasks into batches (batch size is 100 in this work) and distribute them across the MPI processes to maximize the utilization of all available computing resources. The load-balancing algorithm employed is outlined as follows:
 
 %在模拟中物理性质剧烈波动通常会集中在小区域内，比如激波，接触间断面，这些区域往往会为ISAT表中添加更多的记录。这使得在ISAT在并行时往往导致明显不平衡。ISAT的并行问题在一些工作里也被讨论过\cite{lu2009computationally,wu2018parallel}，他们主要尝试将计算域内的计算量进行不同的划分，利用MPI通信机制重新分配给各个MPi进程，最终使得计算量更为均衡。这一方法的使用高度依赖计算流动空间分布上的特征，以及计算域的分解方法，并且大量的通信降低了ISAT的性能。由于在本工作中，我们将ISAT表在内存中共享，这使得在进行的分配任务时不需要考虑流动的空间特性。我们在分配任务时将多个任务打包，分发到不同的核心中，最大化的利用全部的计算资源。负载均衡算法如下：
 
 
-We employ multiple linked lists using shared memory to efficiently handle load balancing. Specifically, we employ three key lists: List E, denoting "empty", serves as a repository for available empty nodes, while List T, denoting "task", is responsible for storing pending task inputs awaiting allocation. Additionally, each process maintains its own List F, signifying "finish," to store the output results.
+We employ multiple linked lists using shared memory to efficiently handle load balancing. Specifically, we employ three key lists: List T, denoting ``task'', is responsible for storing pending task inputs awaiting allocation. Additionally, each process maintains its own List F, signifying ``finish'' to store the output results. When nodes in List F are used up, they are sent to List E, denoting ``empty'', and these nodes are then accessed by List T.
 
-Upon initialization, both List F and List T are left empty. List E is filled with nodes, with the number of nodes being three times the number of MPI processes. During this initialization phase, each process is marked as not idle.
+%When a node in List F are used and recycle to List E, denoting ``empty'', and  serves as a repository for available empty nodes,
+
+Upon initialization, both List F and List T are left empty. List E is filled with nodes, with the number of nodes being three times the number of MPI processes. $N_{plan}$ is set to zero. In each time step, load balancing is shown in Algorithm~\ref{al:LB}.%During this initialization phase, each process is marked as not idle.
 
 %每个进程的计算域内的问题被分成一定大小的batch， 我们取batch size 为100, 
 %在计算中需要使用多个共享内存存储的链表队列。empty队列用于存储空的节点，filled用于存储等待被分配计算的任务。每个进程有一个complete队列，用于存储计算完的结果。在初始化时，filled队列与complete队列被置为空。empty队列放置3倍的MPI进程数的node
@@ -709,27 +727,29 @@ Upon initialization, both List F and List T are left empty. List E is filled wit
 \LinesNumbered
 \begin{algorithm}[H]
 	\caption{Load balancing algorithm} \label{al:LB}
-	List F and List T are left empty \;
-	List E is filled with $N$ empty nodes, $N = 3 \times N_{process} $ \;
-	idle $\gets$ false\;
-	$N_{idle} \gets 0$\;
+	%List F and List T are left empty \;
+	%List E is filled with $N$ empty nodes, $N = 3 \times N_{process} $ \;
+	idle $\gets$ false, $N_{idle} \gets 0$\; \tcc{current process isn't idle, total number of idle processes is zero}
+	$N_{send} \gets 0$, $N_{receive} \gets 0$\; \tcc{number of batches sent out and received are zero}
 	\While{number of allocated batches $<$ number of total batches}{
 		Complete the calculation of the next batch\;
+		\If{$N_{send} < N_{plan}$}{
+			write the inputs of one batch of local tasks into List T, $N_{send}$++\;
+		}
 		\If{$N_{idle} > 0$}{
-			write the inputs of $ N_{idle}$ batches of local tasks into List T\;
+			write the inputs of $ N_{idle}$ batches of local tasks into List T, $N_{send}$++\;
 		}
 		\If{list F of rank R is not empty}{
-			the task results are written back to the corresponding computation domain\;
+			the results are written back to the corresponding computation domain,
 			the used node is inserted into list E\;
 		}
 	}
 	\While{ idle = true \textbf{and} $N_{idle }=  N_{process}$ \textbf{and} list T is empty }
 	{
 		\If{idle = true \textbf{and} list T is not empty}{
-			idle $\gets$ false\;
-			$N_{idle} \gets  N_{idle} - 1$\;
-			fetched a batch from list T\;
-			finish the computing tasks\;
+			idle $\gets$ false,	$N_{idle}$--, $N_{receive}$++\;
+			fetched a batch from list T,
+			finish the computing tasks, 
 			place the result in the list F of the sender's process\;
 		}
 		\If{list F of rank R is not empty}{
@@ -738,10 +758,10 @@ Upon initialization, both List F and List T are left empty. List E is filled wit
 		}
 		\If{idle = false}
 		{
-			idle $\gets $ true\;
-			$N_{idle} \gets   N_{idle}$ + 1\;
+			idle $\gets $ true , $N_{idle} \gets   N_{idle}$ + 1\;
 		}
 	}
+	$N_{plan} \gets N_{send} - N_{receive}$\; \tcc{update the number of batches plan to be sent in the next timestep}
 \end{algorithm}
 
 
@@ -753,40 +773,55 @@ Upon initialization, both List F and List T are left empty. List E is filled wit
 	\label{MPI_LB}
 \end{figure}
 
-
-In Algorithm \ref{al:LB}, Line 5 to 14 constitute a local computation and task allocation loop, while Line 15 to 31 encompass a loop for solving shared tasks and writing back the output. In simulation, the slow processes are mainly in the first loop, and the faster processes quickly complete their tasks and enter the second loop to share the computation tasks of the former, (see in Fig. \ref{MPI_LB}).  %Because the ISAT tables are shared among all processes, every process updates the same ISAT table, irrespective of the computational domain.
+In Algorithm \ref{al:LB}, Line 3 to 14 constitute a local computation and task allocation loop.
+Specifically, Lines 8 to 11 address the scenario where idle processes are available; in such cases, the process sends out $N_{idle}$ batches. This loop is triggered solely when idle processes exist. To minimize waiting times even further, we employ another loop (Line 5-6) where processes actively send the task based on the result of the previous time step. Line 15 to 27 encompass a loop for solving shared tasks and writing back the output. In simulation, the slow processes stay longer in the first loop, and the faster processes quickly complete their tasks and enter the second loop to share the computation tasks of the former, (see in Fig. \ref{MPI_LB}).  %Because the ISAT tables are shared among all processes, every process updates the same ISAT table, irrespective of the computational domain.
 It's crucial to emphasize that linked list operations must address data race issues, necessitating the use of mutexes to guarantee the safety of each operation. Fortunately, these operations involve minimal computational overhead, resulting in negligible performance impact.
 Through the method outlined above, all tasks can be equitably distributed across all processes, thereby maximizing the efficient utilization of computing resources.
 %1-4是一个本地计算和任务transfer循环，5-8是求解被共享的任务，与将输出存储的循环。由于ISAT表是共享的，所以任何一个进程都能ISAT表都是相同的，不受计算域影响。需要强调的是队列操作需要处理数据竞争的问题，每次操作都需要用mutex保证操做的安全。这样的操作由于需要的计算量非常小，mutex的使用几乎不会产生对性能的影响。通过以上的方法所有任务可以被均匀的分配给所有的进程，最大化的利用计算资源。
 
+\subsubsection{Distributed data structures}
+%%Although we use a high efficiency concurrent binary tree, we can do multiple read and write operations at the same time. But the algorithms implemented to solve the data race problem are more burdensome, making simple read operations slower. To further improve performance, we implemented a distributed data structure that creates a local table per process while preserving the shared table. For retrieval operations, a process searches in the local table first. If the retrieval fails,it searches in the shared table. If a record in the shared table can be used for retrieval, add them to the local table. If the shared table also fails to retrieve, the growth operation and addition operation are tried again. For records that are newly added to the shared table, they are also inserted the local table as well. This approach makes use of local tables to improve the performance of query operations, while shared tables are used to maximize the utilization of the computation results of individual processes. This method allows each process to have a different local table, which is more suitable for dealing with the tasks from its own process. With this feature in mind, we count how many tasks in each batch have done growth and addition during the time step. In the next timestep, the batch that can be retrieved quickly is computed locally and the more time-consuming batch (conducted more growth and addition in previous time step) is sent out first.
+
+
+While utilizing a high-efficiency concurrent binary tree, we enable concurrent read and write operations. However, addressing data race issues through implemented algorithms introduces added complexity, which impacts the speed of straightforward read operations. To further enhance performance, we've introduced a distributed data structure that incorporates both local and shared tables.
+
+For a quary, each process initially try to retrieve using its local table. If this local query fail, it then resorts to the shared table. If a record within the shared table proves suitable for retrieval, it is subsequently added to the local table. In cases where even the shared table retrieval fails, we attempt growth and addition operations once more. Newly added records to the shared table are also inserted into the corresponding local tables.
+
+This approach optimizes performance by leveraging local tables for speedy retrieval operations, while the shared tables maximize the utilization of computational results from individual processes. This method allows each process to maintain a distinct high-efficient local table tailored to its specific tasks. Capitalizing on this feature, we monitor the number of tasks in each batch that underwent growth and addition operations during the time step. In the subsequent time step, we prioritize processing the batch that can be quickly retrieved locally, while the more time-intensive batch (with more growth and addition operation in the previous time step) is sent out first.
+
+%尽管我们使用了一个high efficiency concurrent binary tree，能够实现多个读和写的操作同时进行。但是为了解决data race的问题而实现的算法带来了更多的负担，这使得简单的读操作变的更慢。为了进一步提高性能，我们实现了一个distributed data structures，既在保留shared table的同时在每个进程再创建一个本地的table。在retrieval操作时首先在本地的table中搜索，如果失败则在shared table中搜索，对于shared table中的record要加入local table。如果shared table也没有成功 retrieve，则再尝试Growth operation和addition operation。 对于新加入shared table的record也要插入local table。这一方法利用了local table的来提高查询操作的性能，同时使用shared table来最大化利用各个进程的计算结果。不过这一方法使得每个进程有不同的local table，他们更适合处理自己进程的问题。考虑到这一特性，我们在每次计算后统计每个batch中有多少task进行了Growth和addition。在下一个timestep中优先本地计算那些能快速retrieve的batch，而优先把更为耗时的batch发送出去。
+
 
 \subsection{Numerical test}
 We conducted simulations of transcritical shock-droplet interactions to assess the performance of the proposed parallel ISAT method. These simulations were executed on a high-performance computing cluster comprising five nodes, each equipped with dual AMD EPYC 7702 processors, boasting a total of 128 cores per node.
-\subsubsection{2D shockdroplet simulations}
+\subsubsection{2D shock-droplet interaction simulations}
 
 %我们使用了在之前章节使用的shock-droplet interation simulation，选取FC这一算力，对这一新模型的性能进行测试，首先我们测试了将计算域分为在x方向上分为两部分，两个MPI进程分别叫做P1,P2,
 %We used the shock-droplet interaction simulation using the FC scheme in the previous chapter to test the performance of the new models. First, we used two processes to conduct the simulation. We decomposed the domain into two parts in the x direction. The two MPI processes are called P1 and P2, as shown in Fig.~\ref{MPI_P2}.
 
-In the preceding chapter, we harnessed the power of the FC scheme to simulate the interaction between shockwaves and droplets. This simulation served as a crucial testbed for evaluating the performance of novel models. To carry out this investigation, we first conduct a simulation using two MPI processes. In the x-direction, we decomposed the domain into two distinct regions, aptly named P1 and P2, as illustrated in Fig.~\ref{MPI_P2}. We applied three ISAT methods for the simulation: the original ISAT approach (where each process generates its independent ISAT table), a shared ISAT approach, and a shared ISAT with Load Balancing (LB).
+%%In Sec.\ref{sec:SD} section, we harnessed the power of the FC scheme to simulate the interaction between shockwaves and droplets. This simulation is also used to evaluate the performance of novel parallel ISAT models.
+
+In Sec.\ref{sec:SD}, we simulated the interaction between shockwaves and droplets using the FC scheme. The same simulation (initial temperature 565 K, single component \ce{n-C12H26} droplet) is also used to evaluate the performance of novel parallel ISAT models. To carry out this investigation, we first conduct a simulation using two MPI processes. In the x-direction, we decomposed the domain into two distinct regions, aptly named P1 and P2, as illustrated in Fig.~\ref{MPI_P2}. We applied four ISAT methods for the simulation: the original ISAT approach (where each process generates its independent ISAT table), the shared ISAT approach, the shared ISAT with load balancing (LB), and the hybrid shared and local ISAT approach with LB.
+
 \begin{figure}[htbp]
 	\centering
-	\includegraphics[width=0.\linewidth]{P2_2.png}
+	\includegraphics[width=0.6\linewidth]{P2_2.png}
 	\caption{Schematic of comuputation domain in  two-process simulation}
 	\label{MPI_P2}
 \end{figure}
 
 
 
-In Fig.\ref{MPI_2core}, we present the CPU time and memory consumption (in terms of table size) used during the execution of these simulations utilizing the three ISAT methods. In Fig.\ref{MPI_2core}(a), load imbalance is evident for both the shared ISAT and the original ISAT. This disparity starts at the initial encounter of the shockwave with the droplet in P1, occurring at approximately t1 (around 0.5 $\mu s$). This event precipitates a surge in computational workload within P1. Meanwhile, P2 remains unaffected until approximately 0.7 $\mu s$ (as denoted by t2 in Fig.\ref{MPI_2core}(a)), at which point the shockwave enters P2's computational domain, leading to an increase in computational demand. At roughly 1.5 $\mu s$, the shockwave's impact on P1 diminishes, subsequently reducing CPU time. The shared ISAT approach with LB makes good use of computing resources, and both processes achieve precisely equal CPU times.
+In Fig.\ref{MPI_2core}, we present the CPU time and memory consumption (in terms of table size) used during the execution of these simulations utilizing the three ISAT methods. In Fig.\ref{MPI_2core}(a), load imbalance is evident for both the shared ISAT and the original ISAT. This disparity starts at the initial encounter of the shockwave with the droplet in P1, occurring at approximately t1 (around 0.5 $\mu s$). This event precipitates a surge in computational workload within P1. Meanwhile, P2 remains unaffected until approximately 0.7 $\mu s$ (as denoted by t2 in Fig.\ref{MPI_2core}(a)), at which point the shockwave enters P2's computational domain, leading to an increase in computational demand. At roughly 1.5 $\mu s$, the shockwave's impact on P1 diminishes, subsequently reducing CPU time. The shared ISAT approach with LB makes good use of computing resources, and both processes achieve precisely equal CPU times. The hybrid shared and local ISAT approach's performance  has a similar performance compared to shared ISAT, but a little slower because of more computation required for local \& shared table management.
 
-In order to compare parallel performance, we realize the slower process dictates the overall computational pace, necessitating that other processes wait until the slowest one completes its calculations. In each step, the slowest process determines the duration of computation. Comparing the three methods, we can see that the shared ISAT method shows better performance compared to the original ISAT. This improvement can be attributed to its ability to allow P1 and P2 to utilize each other's computation results, thereby mitigating redundancy. Moreover, the shared ISAT approach with LB further improves performance and minimizes load imbalance. Quantitatively, shared ISAT outperforms the original ISAT by 9.5\%, while shared ISAT with LB boasts a remarkable 34\% improvement in computational efficiency.
+In order to compare parallel performance, we realize the slower process dictates the overall computational pace, necessitating that other processes wait until the slowest one completes its calculations. In each step, the slowest process determines the duration of computation. Comparing the three methods, we can see that the shared ISAT method shows better performance compared to the original ISAT. This improvement can be attributed to its ability to allow P1 and P2 to utilize each other's computation results, thereby mitigating redundancy. Moreover, the shared ISAT approach with LB further improves performance and minimizes load imbalance. Quantitatively, shared ISAT outperforms the original ISAT by 9.5\%, while shared ISAT with LB boasts a remarkable 34\% improvement in computational efficiency. The hybrid shared and local ISAT approach also achieves a 24\% improvement.
 
 
 %我们使用三种方法分别进行模拟，分别是使用原先的ISAT(每个进程建立字节的ISAT表)，共享的ISAT，共享的ISAT+ Load balancing （LB）。
 %下图展示了我们使用三中方式进行模拟时，CPU time 与表格大小(内存消耗)。在a图上我们很清楚的看到，Shared ISAT 与 原先的ISAT有明显的不平衡。这一点也非常好理解，激波首先P1的区域内与液滴碰撞，导致计算量的增加，这是P2的计算域仍然是不受影响的，直到大约0.7mus时，激波进入P2的区域计算量开始增长。到大约1.5mus左右，P1内受激波的影响减少，CPU time 降低。可以看出shared ISAT比原先的ISAT性能有所提升，这是由于其共享特性P1，P2可以使用另一个进程的计算结果，减少了一些冗余计算。shared ISAT with LB 由于其算法特性导致两个进程的CPU时间完全一样。由于在并行中，较慢的进程是瓶颈，其他进程必须要等待直到最慢的进程完成。每个步长里最慢的进程是决定计算使用的时间。因此可以明显看到shared ISAT + LB 很明显的提高了计算速度。对于这个算例，shared总计算速度比ISAT快9.5\%,LB 比ISAT快34\%.
 Fig.\ref{MPI_2core}(b) illustrates memory consumption through table size for three methods. In the original ISAT, we also provided separate table size data for process P1 and P2. Notably, the memory growth patterns for P1 and P2 align with CPU time growth. Around $1.5 \mu s$, P1's table size remains unchanged, which is because the redundant record deletion method works and limits the continued growth of table size.
 
-The memory consumption of the two methods using the shared ISAT is similar. Throughout the entire computation process, the shared ISAT without LB consumes approximately 86\% of the memory space required by the original method, while with LB method, utilizes approximately 77\% of the original method's memory footprint.
+The memory consumption of the two methods using the pure shared ISAT is similar. Throughout the entire computation process, the shared ISAT without LB consumes approximately 86\% of the memory space required by the original method, while with LB method, utilizes approximately 77\% of the original method's memory footprint. The hybrid shared and local ISAT approach entails a larger memory footprint, primarily attributed to the incorporation of local tables. However,  due to the presence of shared tables, the local tables only need to store a limited amount of frequently accessed data, resulting in a modest increase in memory usage. Consequently, the overall memory consumption remains 87\% of the original ISAT method.
 
 
 %图b用table size展现了不同方法的内存消耗，在原先的ISAT中我们还额外画出了P1，P2两个线程分别的table size。P1,和P2的内存增长的区间很好地对应了CPUtime增长的部分。P1在1.5mus左右，table size 没有变化，这是因为redundant record deletion methods起作用了，限制了table size的继续增长。两个共享ISAT的方法的内存消耗比较接近。在整个计算中share方法与LB方法分别使用了原方法86\%,77\%的内存空间。
@@ -795,8 +830,8 @@ The memory consumption of the two methods using the shared ISAT is similar. Thro
 
 \begin{figure}[htbp]
 	\centering
-	\includegraphics[width=0.45\linewidth]{2core_time_2.png}
-	\includegraphics[width=0.45\linewidth]{mem_2core.png}
+	\includegraphics[width=0.45\linewidth]{time_2core_n.png}
+	\includegraphics[width=0.45\linewidth]{mem_2core_n.png}
 	\caption{(a) The performance of different ISAT methods, in terms of the CPU time spent in every time step. (b) Memory usage of different ISAT methods, in terms of table size at every time step.}\label{MPI_2core}
 \end{figure}
 
@@ -804,11 +839,11 @@ In the next part, we use four processes to further observe the effect of domain 
 
 %用4个MPI线程时，有三种常用的分解方式， 4x1 (在x方向分成4份，y方向分成一份，下同)，2x2,1x4。 我们使用之前使用的三种IAST方法计算分别采用3种domain decomposition的方法模拟，得到9个结果。由于在之前的分析我们看到oringal ISAT和shared ISAT的不同进程在模拟中的CPU time趋势接近，我们在下图只展示oringal ISAT的结果。可以看到在4-1下，有两个进程几乎完全空闲，这是位于左右两侧的计算域，其中不含有液滴，于是内部的热力学状态十分简单，能够快速的查表计算。中间两个进程的情形比较接近之前两个进程的情形。在2-2下，这种情形相当于把上一节讨论两个进程的每个进程在在y方向均分，由于算例上下对称，这y方向分割，负载很均衡。在1-4下，最接近上下两侧的计算域完全不包含液滴，tabulation效率很高，只在reflection wave 进入其计算域时计算量提高。这三种方式里2-2的分割负载最为均匀。在shared ISAT with LB 中，三种分割方式对性能的影响明显较小。由于LB算法是有一定的开销的，2-2 这种更为均衡的分割方式性能更好一点。
 
-When employing four MPI processes, there are three common strategies for decomposition: $4\times1$ (dividing the domain into four sections along the x-axis and one along the y-axis, the same applies below), $2\times2$, and $1\times4$. We conducted simulations utilizing all combinations of three ISAT methods and three decomposition techniques, resulting in a total of nine outcomes. Given that our previous analysis showed similar CPU time trends between the original ISAT and shared ISAT during simulation, we present only the results for the original ISAT in Fig.~\ref{MPI_4core}.
+When employing four MPI processes, there are three common strategies for decomposition: $4\times1$ (dividing the domain into four sections along the x-axis and one along the y-axis, the same applies below), $2\times2$, and $1\times4$. We conducted simulations utilizing all combinations of four ISAT methods and three decomposition techniques, resulting in a total of twelve outcomes. Given that our previous analysis showed similar CPU time trends between the original ISAT and shared ISAT during simulation, we present only the results for the original ISAT in Fig.~\ref{MPI_4core}.
 
-Observations reveal that when using a $4\times1$ decomposition, two processes remain largely inactive, positioned on the left and right sides (along x direction) of the computational domain. These regions don't contain liquid droplets and thus exhibit a straightforward thermodynamic state conducive to efficient tabulation. The results of the middle two processes closely resemble those of previous simulations (see Fig.~\ref{MPI_2core}(a)). In the case of $2\times2$ decomposition, this situation is very similar to the result of two processes. Because the computation domain of each process contains droplets, the computational load remains highly balanced.
+Observations reveal that when using a $4\times1$ decomposition (Fig.~\ref{MPI_4core}(a)), two processes remain largely inactive, positioned on the left and right sides (along x direction) of the computational domain. These regions don't contain liquid droplets and thus exhibit a straightforward thermodynamic state conducive to efficient tabulation. The results of the middle two processes closely resemble those of previous simulations (see Fig.~\ref{MPI_2core}(a)). In the case of $2\times2$ decomposition  (Fig.~\ref{MPI_4core}(b)), this situation is very similar to the result of two processes. Because the computation domain of each process contains droplets, the computational load remains highly balanced.
 
-In the $1\times4$ decomposition, the processes of the upper and lower domains contain no droplets. Consequently, tabulation efficiency is notably high. Additional computation is only required when the reflection wave enters their computational domain. Among the three decomposition methods, $2\times2$ achieves the most equitable load distribution. When employing shared ISAT with LB, the three decomposition methods exert less influence on performance. Given that the LB algorithm incurs a certain level of overhead, the more balanced $2\times2$ decomposition method delivers better performance.
+In the $1\times4$ decomposition (Fig.~\ref{MPI_4core}(c)), the processes of the upper and lower domains contain no droplets. Consequently, tabulation efficiency is notably high. Additional computation is only required when the reflection wave enters their computational domain. Among the three decomposition methods, $2\times2$ achieves the most equitable load distribution. When employing shared ISAT with LB  (Fig.~\ref{MPI_4core}(d)), the three decomposition methods exert less influence on performance. Given that the LB algorithm incurs a certain level of overhead, the more balanced $2\times2$ decomposition method delivers better performance.
 
 \begin{figure}[htbp]
 	\centering
@@ -822,21 +857,76 @@ In the $1\times4$ decomposition, the processes of the upper and lower domains co
 
 %下图展现了所有9个算例的总时间消耗，可以看出来shared ISAT 与origal ISAT 都明显的收到domain decomposition的影响，而且shared ISAT 并不总能获得相对于origal ISAT更好的性能。这是由于在shared ISAT中为了维护数据结构的完整防止data racing，我们设计的并发算法会降低一定性能，而且shared table使得table的大小增加，减慢搜索的速度。但是在shared ISAT with LB 中，性能受domain decomposition大大降低了。获得了明显的性能提升。
 
-Fig.~\ref{MPI_4core_all} illustrates the total time consumption across all nine examples. It is evident that both shared ISAT and original ISAT are noticeably influenced by domain decomposition, and shared ISAT does not consistently outperform the original ISAT. This discrepancy arises from the fact that in shared ISAT, our concurrency algorithm, designed to maintain data structure integrity and prevent data racing, introduces some performance overhead. Additionally, the shared table increases in size, which can slow down search speeds.
+Fig.~\ref{MPI_4core_all} illustrates the total time consumption across all twelve results. It is evident that both shared ISAT and original ISAT are noticeably influenced by domain decomposition, and shared ISAT does not consistently outperform the original ISAT. This discrepancy arises from the fact that in shared ISAT, our concurrency algorithm, designed to maintain data structure integrity and prevent data racing, introduces some performance overhead. Additionally, the shared table increases in size, which can slow down search speeds.
 
-However, in the case of shared ISAT with LB, domain decomposition leads to a significant performance boost. This improvement is particularly noteworthy and underscores the advantages of this specific configuration.
+%However, in the case of two method with LB, both methods are significantly faster and less affected by decomposition methods. There is no significant difference between the two methods, because the data race is not as obvious when the number of processes is small, and this difference will show up in subsequent tests with more processes.
+
+Nonetheless, when considering the two methods with LB, it becomes evident that both approaches exhibit significantly improved performance and are less susceptible to the influence of decomposition methods.  Notably, there exists no substantial distinction between these two methods at this juncture. This absence of significant differentiation can be attributed to the fact that the data race issue is less pronounced when the number of processes is limited. It is expected that distinctions between the two methods will become more pronounced in subsequent tests involving a larger number of processes.
+%domain decomposition leads to a significant performance boost. This improvement is particularly noteworthy and underscores the advantages of this specific configuration.
 
 
 \begin{figure}[htbp]
 	\centering
-	\includegraphics[width=0.45\linewidth]{time_4core_all.png}
+	\includegraphics[width=0.6\linewidth]{time_4core_all_n.png}
 
 	\caption{The effect of domain decomposition on the ISAT performance. The bar chart shows total CPU time cost of simualtions using all combination of ISAT methods and decomposition methods}\label{MPI_4core_all}
 \end{figure}
 
+\subsubsection{3D shock-droplet interaction simulations}
+
+
 %接下来我们测试方法的scaliity， 我们选取之前使用过的3D算例，使用128x128x128的网格，计算在8,16,32,64,128核时的性能。对比在分割时尽量选取使个个维度的分割份数相同（2-2-2,4-2-2,4-4-2,4-4-4,8-4-4）。
 
+%接下来我们进一步测试新方法在使用核心数较多时的情况。我们选取之前使用过的3D算例，考虑到会使用较少的核心数计算，我们在保持其他设置不变的情况下使用一个更粗糙的网格(128x128x128)。我们使用8,16,32,64,128核模拟相同的算例，选用No ISAT, Orginal ISAT, shared ISAT with LB, hybrid shared & local ISAT 4种方法进行模拟。在做domain decomposation 是选用各个方向分割尽量均匀的方法（2-2-2,4-2-2,4-4-2,4-4-4,8-4-4, x-y-z）。 首先我们选取在128核时的情形进行分析
+
+
+We conducted more testing to evaluate the performance of our new approach on a larger scale, utilizing a larger number of computing cores. For this assessment, we revisited the 3D shock-droplet interaction simulation with initial temperature 565 K and single component \ce{n-C12H26} droplet which is previously employed in Sec.\ref{sec:SD_3D}. However, due to the utilization of a reduced number of cores in certain simulations, we opted for a coarser mesh configuration with dimensions of $128\times128\times128$.  We maintained the other simulation settings identical to our previous runs.
+
+Specifically, we executed simulations using 8, 16, 32, 64, and 128 cores for the same setting. We examined four methods for conducting the simulations: No ISAT, the original ISAT approach, shared ISAT with Load Balancing (LB), and the hybrid approach combining shared and local ISAT techniques Our choice of domain decomposition aimed to distribute computational work as evenly as possible in all directions. The domain decomposition configurations, progressing from 8 cores to 128 cores, were as follows: $2\times2\times2$, $4\times2\times2$,$ 4\times4\times2$, $4\times4\times4$, and $8\times4\times4$ (following the same notation as previously explained).
+
+For our initial analysis, we focused on the scenario involving 128 cores. Fig.~\ref{MPI_128core}(a) illustrates the performance of the three ISAT methods. Within these curves, multiple peaks emerge between the 0.5 and 0.7 $\mu s$. This phenomenon arises due to the introduction of numerous new thermodynamic states into the entire system as the shock wave propagates through the droplet. Evidently, both the shared and hybrid ISAT methods effectively curtail computational costs once the shock wave has permeated the droplet, achieving and maintaining a consistently low level of computational overhead. In stark contrast, the original ISAT approach exhibits substantial fluctuations in computational requirements, consistently surpassing those of its counterparts.
+
+During the initial 0.5 $\mu s$, only the shared ISAT method registers high computational costs. In this phase, the distribution of thermodynamic properties remains relatively simple, allowing for the completion of most calculations through rapid retrieval operations. However, owing to the expense associated with shared memory algorithms, the performance of the shared ISAT method suffers. In contrast, the hybrid ISAT method employs local ISAT to surmount this issue, significantly expediting calculations.
+
+In comparison to the original ISAT approach, Shared ISAT and Hybrid ISAT achieve speedup factors of 1.32 and 4.95, respectively.
+
+% 在图1中我们可以清楚的看到，三种ISAT方法的性能。三条曲线在0.5-0.7mu s 之间有多个峰值，这是在激波进入液滴时为整个系统的热力学引入了新的状态导致的。可以看到两个使用了shared ISAT的方法在激波进入液滴之后通过共享机制，将其他核心的计算成本降低，并维持在一个较低的水平。而original ISAT approach的计算量有较大的波动，并且高于其他的方法。在最开始的0.5mus里只有Shared ISAT的方法计算量较高，在这一阶段，热力学性质较为简单，可以通过快速的retrieval operation 完成绝大多数计算。但是由于共享内存算法的较高的计算成本使得计算大大提高了，而hybrid ISAT方法通过，local ISAT 克服了这一问题大大加速了计算。相对于original ISAT approach，Shared ISAT 与hybird shared & local ISAT 分别获得了speedup factor of 1.32, 4.95. 
+
+Fig.~\ref{MPI_128core}(b) presents a comprehensive overview of the memory requirements. Notably, the memory demands for shared ISAT are exceptionally minimal. In fact, within the hybrid method, the shared table size remains within a similar magnitude as the former, but accompanied by the inclusion of 128 local tables, which significantly increases the overall table size. Nevertheless, even with this augmentation, the memory consumption of the hybrid method remains lower than that of the original method. Shared ISAT utilizes just 1/16 of the total size f original method, while hybrid ISAT occupies only 60% of the available memory space.
+
+This observation highlights that each of the two new methods carries its own set of advantages and disadvantages. Shared ISAT excels in terms of memory efficiency, whereas hybrid ISAT boasts superior computational speed. Both approaches clearly outperform the original ISAT method in both temporal and spatial dimensions, offering enhanced performance across the board.
+
+
+% 在图1展示了内存的的需求，纯shared ISAT的内存需求是最小的。实际上再hyrid 方法里，shared table 也非常小，与前者在一个量级上，但是128个local table 使得总table size大大增加。尽管如此，hyrbid 方法的内存消耗仍然小于 Original 方法。shared ISAT只使用了1/16的大小，hybird shared & local ISAT只也使用了60\%内存空间。可以看出两个新方法各有优劣，Shared ISAT 需要更小的内存，hybird shared & local ISAT 有更高的计算速度，并且他们在时间和空间两个维度上都明显好于original ISAT
+
+%图中hybrid 方法的osillation是由于在此方法下shared table中的数据被访问的频率较低低，大量记录会因为不被访问的时长到达上限而被删除 （80 time step 这已设置也在之前被提及），于是导致table size 以设定的周期进行波动。
+
+The oscillation pattern observed in Fig.~\ref{MPI_128core}(b) is attributed to the low-frequency data access within the shared table in the hybrid method. In this approach, a substantial number of records are removed when the unaccessed time surpasses the predefined upper limit (as previously set at 80 timesteps, as mentioned in Sec.\ref{sec:delete}). Consequently, the table size experiences periodic fluctuations as a direct consequence of this cyclic data management process. 
+
+
+\begin{figure}[htbp] 
+	\centering
+	\includegraphics[width=0.45\linewidth]{time_test_128.png}
+	\includegraphics[width=0.45\linewidth]{mem_core_128.png}
+	\caption{(a) The performance of different ISAT methods of 3D shock-droplet interaction simulated using 128 cores, in terms of the CPU time spent in every time step (b) Memory usage of different ISAT methods, in terms of table size at every time step }\label{MPI_128core} 
+\end{figure}
 
 
 
+
+%接下来我们比较在不同核心数下的speed up factor与scalibility。 图2中更能展示了加速的效果。Shared ISAT已经获得了明显的加速效果，但是在Hybrid ISAT放下对比下仍显不足，hybrid ISAT将加速效果进行了巨大的提升，对从8核到128和的运算速度都带来了巨大的提升。即使在128核时仍然获得了30倍的加速。可以看到local table加入的额效果是惊人的，极大了提高了并行下的性能。图A展示了scalibility，可以看到Original ISAT is bad scaling, 从8核增加到128核的过程中，只加速了大约两倍。在使用了Shared之后，相对于从8核到128核加速了3倍左右。当hybrid方法使用时scalibility获得了明显的提升，加速了6倍。尽管这一scalibility任然无法达到No ISAT的水平已经获得了足够大的进步。
+
+Fig.~\ref{MPI_parallel}(a) illustrates the acceleration effects of the ISAT method. Notably, the original ISAT exhibits impressive initial acceleration, providing a 30-fold speedup when utilizing 8 cores. However, it becomes evident that this acceleration effect diminishes as the core count increases. Shared ISAT delivers comparable performance at 8 cores with a more gradual decline in the speedup factor as core count increases, ultimately achieving a greater speedup factor compared to the Original ISAT. Despite the evident acceleration achieved by Shared ISAT, it remains somewhat modest in comparison to the remarkable gains realized through the hybrid ISAT method. Hybrid ISAT showcases a substantial surge in speed when scaling from 8 to 128 cores, obtaining an exceptional 30 times acceleration even with 128 cores engaged. This striking result underscores the incredible impact of incorporating a local table, significantly enhancing parallel performance.
+
+Fig.~\ref{MPI_parallel}(b), focusing on scalability, accentuates the disparity among ISAT methods. Original ISAT exhibits suboptimal scaling, offering only a twofold acceleration when transitioning from 8 to 128 cores. Conversely, shared ISAT demonstrates a noteworthy improvement, achieving nearly a threefold speedup across the same core range. However, the Hybrid ISAT method takes scalability to new heights, achieving an impressive sixfold acceleration in this transition.
+
+These comprehensive tests conclusively highlight the substantial performance enhancements achieved by employing both shared and local tables within the hybrid ISAT approach. Both in terms of scalability and absolute acceleration, the hybrid method vastly improves the parallel performance when compared to the original ISAT.
+
+
+\begin{figure}[htbp] 
+	\centering
+	\includegraphics[width=0.45\linewidth]{time_parallel2.png} 
+	\includegraphics[width=0.45\linewidth]{time_parallel.png}
+	\caption{The speedup factor of different ISAT methods of 3D shock-droplet interaction simulated using 128 cores. (a) speedup factor compared to the 8-processor results using the same method (b) speedup factor compared to the No IAST using the same number of processors. }\label{MPI_parallel} 
+\end{figure}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

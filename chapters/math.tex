@@ -18,13 +18,13 @@ In this study, we have employed two distinct Computational Fluid Dynamics (CFD) 
 %In this study, a high-pressure multiphase flow simulation framework is developed by coupling a pressure-based CFD solver with a VLE solver (the HPn flash): i.e., a VLE-based CFD simulation framework. %The compressible solver used in this research, is the sprayFoam solver in OpenFOAM, an open source C++ library based on the Finite Volume Method. 
 The pressure-based CFD solver is based on multicomponent governing equations, including mixture density equation (i.e., continuity equation), mixture momentum equations, mixture specific internal enthalpy equation, and component mass fraction equation, as follows:
 \begin{align}
-     & \frac{\partial \rho}{\partial t}+\frac{\partial \rho u_i}{\partial x_i}=0 \label{G:start}      \\
-     & \frac{\partial \rho u_i}{\partial t}+\frac{\partial \rho u_i u_j}{\partial x_j}=-\frac{\partial P}{\partial x_i}+\frac{\partial \tau_{ij}}{\partial x_j} \label{Gm}     \\
-     & \frac{\partial \rho h}{\partial t}+\frac{\partial \rho u_i h}{\partial x_i}+\frac{\partial \rho K}{\partial t}+\frac{\partial \rho u_i K}{\partial x_i}-\frac{\partial P}{\partial t}=-\frac{\partial q_i}{\partial x_i} +\frac{\partial \tau_{ij}u_j}{\partial x_i} \\
-     & \frac{\partial \rho Y_m}{\partial t}+\frac{\partial \rho Y_m u_i}{\partial x_i}=\frac{\partial\left(\rho Y_m V_{mi}\right)}{\partial x_i}  \label{G:end}
+	 & \frac{\partial \rho}{\partial t}+\frac{\partial \rho u_i}{\partial x_i}=0 \label{G:start}                                                                                                                                                                            \\
+	 & \frac{\partial \rho u_i}{\partial t}+\frac{\partial \rho u_i u_j}{\partial x_j}=-\frac{\partial P}{\partial x_i}+\frac{\partial \tau_{ij}}{\partial x_j} \label{Gm}                                                                                                  \\
+	 & \frac{\partial \rho h}{\partial t}+\frac{\partial \rho u_i h}{\partial x_i}+\frac{\partial \rho K}{\partial t}+\frac{\partial \rho u_i K}{\partial x_i}-\frac{\partial P}{\partial t}=-\frac{\partial q_i}{\partial x_i} +\frac{\partial \tau_{ij}u_j}{\partial x_i} \\
+	 & \frac{\partial \rho Y_m}{\partial t}+\frac{\partial \rho Y_m u_i}{\partial x_i}=\frac{\partial\left(\rho Y_m V_{mi}\right)}{\partial x_i}  \label{G:end}
 \end{align}
 
-where $u_i$ is the velocity, $\rho$ is mixture density, $h$ is specific internal enthalpy, $Y_m$ is the mass fraction of specie $m$, $\tau_{ij}$ is the viscous stress tensor defined by $ \tau_{ij} = -\frac{2}{3}\mu\frac{\partial u_k}{\partial x_k}\delta_{ij} + \mu \left( \frac{\partial u_i}{\partial x_j} +\frac{\partial u_j}{\partial x_i}\right) $, $K$ is the kinetic energy, and $q_i$ is the heat flux, $q_i = -\kappa \nabla  T$ where $\kappa$ is the thermal conductivity. 
+where $u_i$ is the velocity, $\rho$ is mixture density, $h$ is specific internal enthalpy, $Y_m$ is the mass fraction of specie $m$, $\tau_{ij}$ is the viscous stress tensor defined by $ \tau_{ij} = -\frac{2}{3}\mu\frac{\partial u_k}{\partial x_k}\delta_{ij} + \mu \left( \frac{\partial u_i}{\partial x_j} +\frac{\partial u_j}{\partial x_i}\right) $, $K$ is the kinetic energy, and $q_i$ is the heat flux, $q_i = -\kappa \nabla  T$ where $\kappa$ is the thermal conductivity.
 The Fickian diffusion is used to evaluate the diffusion velocity in the governing equations:
 $$ V_{mi} = -\frac{D_m}{X_m}\frac{\partial X_m} {\partial x_i} + \sum^{N}_{s}\frac{Y_s D_s}{X_s}\frac{\partial X_s} {\partial x_i},$$
 where $X_m$, and $D_m$ are the mole fraction and the mixture-averaged diffusion coefficient of specie $m$, respectively. The second correction term is to ensure global mass conservation $\sum^{N}_{m} \rho Y_m V_m = 0$.
@@ -34,36 +34,36 @@ where $X_m$, and $D_m$ are the mole fraction and the mixture-averaged diffusion 
 
 The pressure-based CFD solver uses the PIMPLE algorithm \cite{holzmann2016mathematics}, which is a combination of the SIMPLE (semi-implicit method for pressure-linked equations) \cite{patankar1983calculation} and PISO (pressure-implicit split-operator) algorithms \cite{issa1986solution}. The implementation of the PIMPLE algorithm in OpenFOAM has been validated by a lot of researchers around the world for different thermofluid applications \cite{robertson2015validation, higuera2014three,gaikwad2019openfoam,gamet2020validation,de2017implementation,ashton2019verification}. %Additional validation and verification of the CFD solver are provided in Appendix~\ref{App:vali:CFD}, including two shock tube cases and a jet-in-cross flow case. 
 In the PIMPLE solver, the SIMPLE algorithm is used to predict $\rho$, $u_i$, $h$, and $Y_m$ from Eqs.~(\ref{G:start}-\ref{G:end}) in every time step (i.e., the outer loop in Fig.~\ref{FC_CFD}). Then, thermodynamic properties, including $T$ (mixture temperature) and $\phi$ (defined as $\phi = \frac{\rho} {P}$), are evaluated using thermodynamic model (isobaric and isenthalpic solver, i.e. PH solver) with the input $P$ (from the previous time step), and the updated $h$ and $Y_m$. %The ideal gas model and Peng-Robinson Equation of State, PR-EOS, are provided in the standard OpenFOAM version.
-$\phi$ is used to update $P$ and $\rho$. Then, transport properties, $\mu$, $\lambda$, and $D_m$, are updated accordingly. Then $P$ is updated iteratively by solving the pressure Poisson equation Eq.~(\ref{eq:p2}-\ref{eq:p3}). Velocity $u_i$ and thermodynamic properties ($\rho$, $T$, $\phi$, etc.) are also updated after solving the pressure equation at each iteration step. This inner iteration is from the PISO algorithm, and hence it is called ``PISO loop", as shown in Fig.~\ref{FC_CFD}. When the PISO loop is finished, $\rho$ is updated using $ \rho = \phi P$. With the updated properties, Eqs.~(\ref{Gm}-\ref{G:end}) are solved iteratively to update $u_i$, $h$, and $Y_m$, respectively, using the semi-implicit method (i.e., the predictor step) until it converges. This iteration is from the SIMPLE algorithm, and hence is called ``SIMPLE loop", as shown in Fig.~\ref{FC_CFD}. When the SIMPLE loop is finished, the next time step starts.
+$\phi$ is used to update $P$ and $\rho$. Then, transport properties, $\mu$, $\lambda$, and $D_m$, are updated accordingly. Then $P$ is updated iteratively by solving the pressure Poisson equation Eq.~(\ref{eq:p2}-\ref{eq:p3}). Velocity $u_i$ and thermodynamic properties ($\rho$, $T$, $\phi$, etc.) are also updated after solving the pressure equation at each iteration step. This inner iteration is from the PISO algorithm, and hence it is called ``PISO loop'', as shown in Fig.~\ref{FC_CFD}. When the PISO loop is finished, $\rho$ is updated using $ \rho = \phi P$. With the updated properties, Eqs.~(\ref{Gm}-\ref{G:end}) are solved iteratively to update $u_i$, $h$, and $Y_m$, respectively, using the semi-implicit method (i.e., the predictor step) until it converges. This iteration is from the SIMPLE algorithm, and hence is called ``SIMPLE loop'', as shown in Fig.~\ref{FC_CFD}. When the SIMPLE loop is finished, the next time step starts.
 
 
 \begin{figure}[htbp]
-    \centering
-    \includegraphics[width=0.95\linewidth]{flowchart3.png}
-    \centering
-    \caption{Flow chart of the VLE-based CFD solver.}
-    \label{FC_CFD}
+	\centering
+	\includegraphics[width=0.95\linewidth]{flowchart3.png}
+	\centering
+	\caption{Flow chart of the VLE-based CFD solver.}
+	\label{FC_CFD}
 \end{figure}
 
 The compressible pressure Poisson equation in the PIMPLE algorithm is derived from the continuity and momentum equations. In the SIMPLE algorithm, the momentum equations Eq.~(\ref{Gm}) are written into a semi-discretized matrix form:
 \begin{equation}
-    A u+ \sum_{ne} A_{ne} u_{ne} =S+\nabla P \label{p0}
+	A u+ \sum_{ne} A_{ne} u_{ne} =S+\nabla P \label{p0}
 \end{equation}
 where $u_{ne}$ is the velocity of a neighbor grid point $ne$, $A$ and $A_{ne}$ are the matrix coefficients corresponding to the current and neighbor grid points, respectively. All other terms are denoted as $S$. Rearranging Eq.~(\ref{p0}) gives the following form:
 \begin{align}
-     & u=H^*-\frac{\nabla P}{A}\label{p1}       \\
-     & H^* =\frac{S-\sum_{ne} A_{ne} u_{ne}}{A}
+	 & u=H^*-\frac{\nabla P}{A}\label{p1}       \\
+	 & H^* =\frac{S-\sum_{ne} A_{ne} u_{ne}}{A}
 \end{align}
 Substituting $\phi=\frac{\rho} {P}$ and Eq.~(\ref{p1}) into the continuity equation (Eq.~(\ref{G:start})) gives the pressure Poisson equation:
 \begin{align}
-    \text{Subsonic: }  & \frac{\partial\phi P}{\partial t}+\nabla\cdot \Bigg[\rho \bigg(H^*- \frac{\nabla P}{A}\bigg)\Bigg]=0 \label{eq:p2}         \\
-    \text{Transonic: } & \frac{\partial\phi P}{\partial t}+\nabla\cdot (\phi P H^*)-\nabla\cdot \bigg(\rho \frac{\nabla P}{A}\bigg)=0 \label{eq:p3}
+	\text{Subsonic: }  & \frac{\partial\phi P}{\partial t}+\nabla\cdot \Bigg[\rho \bigg(H^*- \frac{\nabla P}{A}\bigg)\Bigg]=0 \label{eq:p2}         \\
+	\text{Transonic: } & \frac{\partial\phi P}{\partial t}+\nabla\cdot (\phi P H^*)-\nabla\cdot \bigg(\rho \frac{\nabla P}{A}\bigg)=0 \label{eq:p3}
 \end{align}
 %%Eq.~(\ref{eq:p2}) and Eq.~(\ref{eq:p3}) are used for pressure update. Eq.~(\ref{eq:p3}) is obtained by substituting $\phi=\frac{\rho} {P}$ into the second term of Eq.~(\ref{eq:p2}). With this change, the solver is able to capture the compressibility better. Hence, Eqs.~(\ref{eq:p2}) and (\ref{eq:p3}) are used to solve subsonic and transonic flows, respectively.
 
 Eq.~(\ref{eq:p2}) and Eq.~(\ref{eq:p3}) represent the pressure Poisson equations tailored for subsonic and transonic flows, respectively. Eq.~(\ref{eq:p3}) emerges from the substitution of $\phi=\frac{\rho} {P}$ into the second term of Eq.~(\ref{eq:p2}). This alteration serves to enhance the description of the interdependence between pressure and density, thereby enabling the solver to more effectively capture compressibility.
 
-%The new contributions from this study to the OpenFOAM solver and PIMPLE algorithm are summarized here. This study replaces the original thermodynamic model with the VLE + PR-EOS model implemented in this study, as shown in Fig.~\ref{FC_CFD}. Due to the high computational cost of VLE calculation, a novel VLE-based tabulation method is developed to accelerate simulations and make the CFD solver computationally more affordable, as shown in the right box of Fig.~\ref{FC_CFD}. For each simulation, a table is generated to record the solution of TPn flash, density, enthalpy, $c_p$, and transport properties at different temperatures (280-1200 K), pressures (280-700 bar), and \ce{CO2} mole fractions (0.0001-0.9999). Each solution includes, every species' mole fraction in liquid and gas phases, and transport properties. In simulations, a linear approximation method based on eight neighboring records is used for data retrieval. More details about this VLE-based tabulation method is provided in Appendix~\ref{App:tab}. For a large number of components, this tabulation method will demand infeasible memory, and we are developing a new on-the-fly tabulation of VLE solutions using the \textit{in situ} adaptive tabulation (ISAT) approach \cite{zhang2021multi}, similar to the idea of correlated dynamic evaluation of real fluid properties for supercritical mixing \cite{yang2017comparison} and combustion \cite{milan2019time}.
+%The new contributions from this study to the OpenFOAM solver and PIMPLE algorithm are summarized here. This study replaces the original thermodynamic model with the VLE + PR-EOS model implemented in this study, as shown in Fig.~\ref{FC_CFD}. Due to the high computational cost of VLE calculation, a novel VLE-based tabulation method is developed to accelerate simulations and make the CFD solver computationally more affordable, as shown in the right box of Fig.~\ref{FC_CFD}. For each simulation, a table is generated to record the solution of TP flash, density, enthalpy, $c_p$, and transport properties at different temperatures (280-1200 K), pressures (280-700 bar), and \ce{CO2} mole fractions (0.0001-0.9999). Each solution includes, every species' mole fraction in liquid and gas phases, and transport properties. In simulations, a linear approximation method based on eight neighboring records is used for data retrieval. More details about this VLE-based tabulation method is provided in Appendix~\ref{App:tab}. For a large number of components, this tabulation method will demand infeasible memory, and we are developing a new on-the-fly tabulation of VLE solutions using the \textit{in situ} adaptive tabulation (ISAT) approach \cite{zhang2021multi}, similar to the idea of correlated dynamic evaluation of real fluid properties for supercritical mixing \cite{yang2017comparison} and combustion \cite{milan2019time}.
 
 
 
@@ -71,59 +71,59 @@ Eq.~(\ref{eq:p2}) and Eq.~(\ref{eq:p3}) represent the pressure Poisson equations
 \subsection{Fully compressible solver}
 In the fully compressible solver, the governing equation uses the mixture internal energy equation rather than mixture specific internal enthalpy equation compared to the pressure-based CFD solver. The mixture internal energy equation is formulated as
 \begin{align}
- %&\frac{\partial \rho}{\partial t}+\frac{\partial \rho u_i}{\partial x_i}=0 \label{Gc},\\
- %&\frac{\partial \rho u_i}{\partial t}+\frac{\partial \rho u_i u_j}{\partial x_j}=-\frac{\partial P}{\partial x_i}+\frac{\partial \tau_{ij}}{\partial x_j} \label{Gm},\\
- &\frac{\partial \rho e}{\partial t}+\frac{\partial \rho u_i e}{\partial x_i}+\frac{\partial \rho K}{\partial t}+\frac{\partial \rho u_i K}{\partial x_i}+\frac{\partial  u_i P}{\partial x_i}=-\frac{\partial q_i}{\partial x_i} +\frac{\partial \tau_{ij}u_j}{\partial x_i}
-  %&\frac{\partial \rho Y_m}{\partial t}+\frac{\partial \rho Y_m u_i}{\partial x_i}=\frac{\left(\rho Y_m V_{mi}\right)}{\partial x_i},
-  %\frac{\partial }{\partial x_j}\left(\rho D \sum_m h_m \frac{\partial Y_m}{\partial x_j}\right)-\frac{\partial }
+	%&\frac{\partial \rho}{\partial t}+\frac{\partial \rho u_i}{\partial x_i}=0 \label{Gc},\\
+	%&\frac{\partial \rho u_i}{\partial t}+\frac{\partial \rho u_i u_j}{\partial x_j}=-\frac{\partial P}{\partial x_i}+\frac{\partial \tau_{ij}}{\partial x_j} \label{Gm},\\
+	 & \frac{\partial \rho e}{\partial t}+\frac{\partial \rho u_i e}{\partial x_i}+\frac{\partial \rho K}{\partial t}+\frac{\partial \rho u_i K}{\partial x_i}+\frac{\partial  u_i P}{\partial x_i}=-\frac{\partial q_i}{\partial x_i} +\frac{\partial \tau_{ij}u_j}{\partial x_i}
+	%&\frac{\partial \rho Y_m}{\partial t}+\frac{\partial \rho Y_m u_i}{\partial x_i}=\frac{\left(\rho Y_m V_{mi}\right)}{\partial x_i},
+	%\frac{\partial }{\partial x_j}\left(\rho D \sum_m h_m \frac{\partial Y_m}{\partial x_j}\right)-\frac{\partial }
 \end{align}
-where $e$ is specific internal energy. 
+where $e$ is specific internal energy.
 
 
-The fully compressible CFD solver was developed using the central-upwind scheme \cite{kurganov2001semidiscrete,greenshields2010implementation}. At each time step, the conservative variables $\rho$, $\rho u$, $\rho e$, and $\rho Y_m$ are updated directly from the discretized governing equations. The conservative vairable satisfies the conservation law strictly in the calculation process. Hence, the central upwind scheme mentioned is a fully conservative (FC) method. 
+The fully compressible CFD solver was developed using the central-upwind scheme \cite{kurganov2001semidiscrete,greenshields2010implementation}. At each time step, the conservative variables $\rho$, $\rho u$, $\rho e$, and $\rho Y_m$ are updated directly from the discretized governing equations. The conservative vairable satisfies the conservation law strictly in the calculation process. Hence, the central upwind scheme mentioned is a fully conservative (FC) method.
 
 As mentioned in Introduction, the use of real fluid EOS introduces spurious pressure oscillations. To eliminate these spurious pressure oscillations, a quasi-conservative approach called the double flux (DF) method \cite{abgrall2001computations,billet2003adaptive,ma2017entropy} is also implemented.
 This method locally freezes the real fluid properties to those of an equivalent calorically perfect gas. During the calculation of the new time step, in each cell, a local calorically perfect-gas EOS is defined using the thermodynamic properties. The pressure field is updated using this newly defined EOS, effectively mitigating the occurrence of spurious pressure oscillations. Subsequently, the remaining thermodynamic properties such as density and species mass fraction are updated using the real-gas EOS and PV flash based on the updated pressure, density, and species mass fraction values. The use of a calorically perfect-gas EOS in the double flux method has been shown by Ma et al. to successfully remove spurious pressure oscillations \cite{ma2017entropy}. To define a locally calorically perfect-gas EOS, an effective specific heat ratio $\gamma^*$ and an effective internal energy $e_0^*$  are formulated as:
 \begin{align}
-\gamma^*& = \frac{\rho c^2}{P},&e_0^*&= e-\frac{Pv}{\gamma^*-1}, \label{eq:IGEOS}
+	\gamma^* & = \frac{\rho c^2}{P}, & e_0^* & = e-\frac{Pv}{\gamma^*-1}, \label{eq:IGEOS}
 \end{align}
 where $c$ is the speed of sound, and $v$ is the specific volume. %$\gamma^*$ and $e_0^*$ can be calculated from the density, internal energy, and speed of sound, which are obtained from real gas EOS.
 With real-fluid EOS, $\gamma^*$ and $e_0^*$ can be nonlinear functions of the thermodynamic states and may not be constant. The main idea of the double flux method is to freeze $\gamma^*$ and $e_0^*$ in space during each timestep advancement. When calculating a flux of a face of a certain cell, the state variable used is not directly from the cell values but reconstructed using $\gamma^*$, $e_0^*$, $P$, and $\rho$. Although this face also belongs to the adjacent cell, $\gamma^*$, $e_0^*$ of the adjacent cell are not used.  For example, on a one-dimensional mesh, the numerical face flux $F^L_{i+\frac{1}{2}}$ for the cell $i$ at $x_{i+\frac{1}{2}}$ can be expressed as (see Fig.~\ref{DF_CFD})
 \begin{align}
-    F^L_{i+\frac{1}{2}}& = F\left(U_{L,i+\frac{1}{2}},U_{R,i+\frac{1}{2}}\right), \\
-    U_{L,i+\frac{1}{2}}& = U_L\left(\gamma^*_i,e_{0,i}^*,P,\rho ,Y\right) ,&
-    U_{R,i+\frac{1}{2}}& = U_R\left(\gamma^*_i,e_{0,i}^*,P,\rho ,Y\right),
+	F^L_{i+\frac{1}{2}} & = F\left(U_{L,i+\frac{1}{2}},U_{R,i+\frac{1}{2}}\right),   \\
+	U_{L,i+\frac{1}{2}} & = U_L\left(\gamma^*_i,e_{0,i}^*,P,\rho ,Y\right) ,       &
+	U_{R,i+\frac{1}{2}} & = U_R\left(\gamma^*_i,e_{0,i}^*,P,\rho ,Y\right),
 \end{align}
 
 
 %where $U^L$ and $U^R$ are conservative variables constructed using calorically perfect-gas EOS. The stencil for constructing conservative variables depends on the interpolation scheme, and the vanLeer method \cite{van1974towards} is used in the current work. In the central-upwind method,
 where $U_L$ and $U_R$ are conservative variables. To calculate $U_L$ and $U_R$, the following steps are performed. First, the conservative variable $\rho e$ in each cell is reconstructed using the calorically perfect-gas Equation of State (EOS) given by Eq.~\ref{eq:IGEOS}. Then, $\rho e$ and other conservative variables are interpolated to the face. Bias interpolation methods, such as the upwind scheme, are commonly used, resulting in the definition of two reconstructed values, $U_L$ and $U_R$, based on the direction of the bias. The subscript ``$L$'' is used to denote the left reconstructed value at a face, while ``$R$'' represents the right reconstructed value. It is important to note that when calculating $U_L$ and $U_R$, only the $\gamma^*$ and $e_0^*$ values from the cell $i$ are used. When using the $\gamma^*$ and $e_0^*$ values in the cell $i+1$, the right flux $F^R_{i+\frac{1}{2}}$ is obtained (see in Fig.~\ref{DF_CFD}). The interpolation method uses van Leer limiter \cite{van1974towards} in the current work. In the central-upwind scheme, the formulas become:
-\begin{align} 
-    F^L_{i+\frac{1}{2}} &= \alpha u_LU_L + \left(1-\alpha\right)u_R U_R + \omega \left(U_R-U_L\right),\\
-    \alpha &= \frac{\phi_L}{\phi_L +\phi_R},&
-     \omega &= \alpha \left(1-\alpha\right) \left(\phi_L+\phi_R\right),
+\begin{align}
+	F^L_{i+\frac{1}{2}} & = \alpha u_LU_L + \left(1-\alpha\right)u_R U_R + \omega \left(U_R-U_L\right),   \\
+	\alpha              & = \frac{\phi_L}{\phi_L +\phi_R},                                              &
+	\omega              & = \alpha \left(1-\alpha\right) \left(\phi_L+\phi_R\right),
 \end{align}
-\begin{align} 
-        \phi_L& = max\left(c_L+|u_L|,c_R + |u_R|,0\right),&\phi_R &= max\left(c_L-|u_L|,c_R - |u_R|,0\right),
+\begin{align}
+	\phi_L & = max\left(c_L+|u_L|,c_R + |u_R|,0\right), & \phi_R & = max\left(c_L-|u_L|,c_R - |u_R|,0\right),
 \end{align}
 
 where $c$ and $u$ are the speed of sound and velocity, respectively. They are obtained from the same interpolation scheme as $U_L$ and $U_R$.
-In this way, the $\gamma^*$ and $e_0^*$ are frozen, and the fluid is locally calorically perfect to remove spurious pressure oscillation \cite{ma2017entropy}. 
-Since each face is adjacent to two grid cells, the two different fluxes at the same face (i.e., the left flux $F^L_{i+\frac{1}{2}}$ and the right flux $F^R_{i+\frac{1}{2}}$ in Fig.~\ref{DF_CFD}) can be obtained. That is why this scheme is called ``double flux'', and two fluxes make the numerical scheme no more conservative.  
+In this way, the $\gamma^*$ and $e_0^*$ are frozen, and the fluid is locally calorically perfect to remove spurious pressure oscillation \cite{ma2017entropy}.
+Since each face is adjacent to two grid cells, the two different fluxes at the same face (i.e., the left flux $F^L_{i+\frac{1}{2}}$ and the right flux $F^R_{i+\frac{1}{2}}$ in Fig.~\ref{DF_CFD}) can be obtained. That is why this scheme is called ``double flux'', and two fluxes make the numerical scheme no more conservative.
 \begin{figure*}[htbp]
-\centering
-\includegraphics[width=0.4\linewidth]{DF.png}
-\caption{Schematic of the double flux (DF) method in a one-dimensional mesh.}
-\label{DF_CFD} 
+	\centering
+	\includegraphics[width=0.4\linewidth]{DF.png}
+	\caption{Schematic of the double flux (DF) method in a one-dimensional mesh.}
+	\label{DF_CFD}
 \end{figure*}
 
 At each time step, $\rho$, $u$, and $Y_m$ are updated using the central-upwind scheme. Then, the DF method is used to update $e$ and $P$. After that, $T,\beta,c$ are obtained using the PV flash solver. In contrast, in the fully conservative scheme (without DF method), $P,T,\beta,c$ are directly updated using the UV flash solver. This entire process is shown in Fig.~\ref{FC_CFD}. DF method is useful to solve the system with large density gradient, but since it is not an energy-conservative scheme, it could cause other problems. In Sec.~\ref{sec:DF}, we compared the results of two methods, and discuss their pros and cons.
 
 \begin{figure*}[htbp]
-\centering
-\includegraphics[width=0.4\linewidth]{solver_flow_chart.png}
-\caption{Flow chart of the VLE-based CFD framework.}
-\label{FC_CFD} 
+	\centering
+	\includegraphics[width=0.4\linewidth]{solver_flow_chart.png}
+	\caption{Flow chart of the VLE-based CFD framework.}
+	\label{FC_CFD}
 \end{figure*}
 
 
@@ -137,18 +137,18 @@ In this section, the models of thermodynamic and transport properties are presen
 \subsection{Peng-Robinson (PR) Equation of State (EOS)}
 VLE models require a real-fluid equation of state (EOS) to describe the properties of single phase. Considering the computational efficiency, acceptable accuracy, and simple implementation, the Peng-Robinson (PR) EOS \cite{peng1976new} is used in this study. The PR EOS is formulated as:
 \begin{align}
-    P=\frac{RT}{V-b}-\frac{a}{V\left(V+b\right)+b\left(V-b\right)}, %\nonumber \\&\left(p=1\rm{: gas};\quad p=2\rm{: liquid}\right)
-    \label{eq:preos}
+	P=\frac{RT}{V-b}-\frac{a}{V\left(V+b\right)+b\left(V-b\right)}, %\nonumber \\&\left(p=1\rm{: gas};\quad p=2\rm{: liquid}\right)
+	\label{eq:preos}
 \end{align}
 where $R$ is the ideal gas constant, $V$ is molar volume. The energy parameter $a$ and co-volume parameter $b$ for pure component $i$ are formulated as:
 
 \begin{align}
-    a_i &= 0.45724\frac{R^2 T_{c_i}^2}{P_{c_i}} \hat{a} , &b_i&=0.07780\frac{RT_{c_i}}{P_{c_i}} \label{eq:ab},\\
-    \hat{a}&=\left[1+\kappa\left(1-\sqrt{\frac{T}{T_{c_i}}}\right)\right]^2, &\kappa&=0.37464+1.54226\omega_i-0.26992\omega_i^2,
+	a_i     & = 0.45724\frac{R^2 T_{c_i}^2}{P_{c_i}} \hat{a} ,                 & b_i    & =0.07780\frac{RT_{c_i}}{P_{c_i}} \label{eq:ab}, \\
+	\hat{a} & =\left[1+\kappa\left(1-\sqrt{\frac{T}{T_{c_i}}}\right)\right]^2, & \kappa & =0.37464+1.54226\omega_i-0.26992\omega_i^2,
 \end{align}
 where $T_{c_i}$ is the critical temperature of component $i$, $P_{c_i}$ is critical pressure of component $i$, and $\omega_i$ is the acentric factor of component $i$. These specie properties are obtained from the NIST REFPROP database. When the PR EOS is used for a multi-component mixture, mixing rules are used to calculate the energy parameter $a$ and co-volume parameter $b$ \cite{reid1977properties}:
 \begin{align}
-a&=\sum_i\sum_j\chi_i\chi_j\sqrt{a_ia_j}(1-k_{ij}),& b&=\sum_i\chi_i b_i,\label{eq:mix}
+	a & =\sum_i\sum_j\chi_i\chi_j\sqrt{a_ia_j}(1-k_{ij}), & b & =\sum_i\chi_i b_i,\label{eq:mix}
 \end{align}
 where $\chi_i$ is the mole fraction of component $i$, and $k_{ij}$ is the binary interaction parameter. The binary interaction parameters utilized in this study were obtained from researches \cite{eliosa2009vapor,garcia2011vapor}, where $k_{ij}$ values are determined by minimizing the discrepancy between experimental and simulation outcomes.
 %%where $\chi_i$ is the mole fraction of component $i$, and $k_{ij}$ is the binary interaction parameter which is often obtained by minimizing the deviation between experimental and simulation results. In this work, only \ce{N2}, \ce{n-C8H18}, and \ce{n-C12H26} are involved. The binary interaction parameter of \ce{N2}/\ce{n-C8H18} system and \ce{N2}/\ce{n-C12H26} system are set as 0.1396 and 0.1561, respectively \cite{eliosa2009vapor,garcia2011vapor}. The binary interaction parameter of \ce{n-C8H18}/\ce{n-C12H26} is set as zero.
@@ -157,28 +157,28 @@ where $\chi_i$ is the mole fraction of component $i$, and $k_{ij}$ is the binary
 \subsection{Vapor-Liquid Equilibrium (VLE)}
 VLE can determine multi-component mixtures' phase boundaries to capture phase change in transcritical flows. In the VLE theory, the multiphase thermodynamic equilibrium is locally satisfied, which requires the equality of pressure $P$ (i.e., mechanical equilibrium), the equality of temperature $T$ (i.e., thermal equilibrium), and the equality of fugacity $f$ of the two phases for each component $i$ (i.e., chemical equilibrium):
 \begin{align}
-P_l=P_v=P,\quad T_l=T_v=T,\quad f_{i,l}=f_{i,v},\quad i=1,...,N, \label{eq:eq}
+	P_l=P_v=P,\quad T_l=T_v=T,\quad f_{i,l}=f_{i,v},\quad i=1,...,N, \label{eq:eq}
 \end{align}
 where the subscript `$l$' and `$v$' refer to liquid and vapor, respectively; $f_i$ is the fugacity of component $i$; and $N$ is the number of components.
 
-There are many different types of VLE solvers, such as isothermal-isobaric (TP) flash \cite{michelsen1982isothermal} and isoenergetic-isochoric (UV) flash \cite{saha1997isoenergetic}. All of them need to solve a two-phase system constrained by Eq.~\ref{eq:eq}, together with the mass conservation of each component. To determine the mixture phase properties, in addition to the mole fraction of each component (i.e., the composition of the mixture), two more mixture properties are required. These two properties determine the type of VLE solvers. For example, TP flash uses the mixture temperature (T) and pressure (P) as inputs to solve the system. The VLE solution provides mixture phase properties, including the vapor phase molar fraction $\beta$ and molar fraction of each component in each phase $x_i,y_i$. 
+There are many different types of VLE solvers, such as isothermal-isobaric (TP) flash \cite{michelsen1982isothermal} and isoenergetic-isochoric (UV) flash \cite{saha1997isoenergetic}. All of them need to solve a two-phase system constrained by Eq.~\ref{eq:eq}, together with the mass conservation of each component. To determine the mixture phase properties, in addition to the mole fraction of each component (i.e., the composition of the mixture), two more mixture properties are required. These two properties determine the type of VLE solvers. For example, TP flash uses the mixture temperature (T) and pressure (P) as inputs to solve the system. The VLE solution provides mixture phase properties, including the vapor phase molar fraction $\beta$ and molar fraction of each component in each phase $x_i,y_i$.
 
 The single-phase thermodynamic properties can be obtained using EOS (including the departure functions derived from EOS) and NASA Polynomials. Additional blend rules are required to bridge the gap between single-phase and two-phase systems. We follow a commonly used method which blends \cite{matheis2018multi,tudisco2020numerical} extensive volume and internal energy, and hence mixture density and mixture specific internal energy are formulated as:
 \begin{align} \frac{M}{\rho} = \beta \frac{M_v}{\rho_v}+\left(1-\beta\right)\frac{M_l}{\rho_l}, \label{eq:rho}
 \end{align}
 \begin{align} Me = \beta M_v e_v + \left(1-\beta\right)M_l e_l, \label{eq:e}
 \end{align}
-where $M$ is the mixture molar mass, $M_v$ and $M_l$ are vapor phase and liquid phase molar mass, $e$ is specific internal energy. 
-Other mixture thermodynamic properties (e.g. mixture enthalpy, mixture specific heat) can be derived based on these properties. 
-In this research, TP flash, UV flash, isobaric-isochoric (PV) flash, and isobaric and isenthalpic (PH) are applied. Specifically, 
+where $M$ is the mixture molar mass, $M_v$ and $M_l$ are vapor phase and liquid phase molar mass, $e$ is specific internal energy.
+Other mixture thermodynamic properties (e.g. mixture enthalpy, mixture specific heat) can be derived based on these properties.
+In this research, TP flash, UV flash, isobaric-isochoric (PV) flash, and isobaric and isenthalpic (PH) are applied. Specifically,
 TP flash solves VLE problems with a given temperature (T) and pressure (P), and is used for the initialization step of the CFD simulation; PV flash solves problems with given pressure (P) and specific volume (V), and is used in the double flux (DF) method (in Sec.~\ref{sec:model:cfd}); UV flash solves problems with given internal energy (U) and specific volume (V), and is used in the fully conservative (FC) scheme; PH flash solves problems with given pressure (P) and eenthalpy (H), and is used in the PIMPLE CFD solver.
 
 \textbf{Isothermal and isobaric (TP) flash:}
 VLE is governed by fugacity equality Eq.~(\ref{eq:4}) and Rachford-Rice equation \cite{rachford1952procedure} Eq.~(\ref{eq:5}). Rachford-Rice equation was derived from the mass conservation of each component.
 \begin{align}
-&f_{i, l}\big/f_{i, g}=1,  \label{eq:4} \\
-&\sum_{i=1}^{N}\bigg\{z_i\left(1-K_i\right)\bigg/\left[1+\left(K_i-1\right)\beta\right]\bigg\}=0, \label{eq:5} \\
-&\sum_{i=1}^{N}x_i=\sum_{i=1}^{N}y_i=1,  \label{eq:5-2}
+	 & f_{i, l}\big/f_{i, g}=1,  \label{eq:4}                                                                        \\
+	 & \sum_{i=1}^{N}\bigg\{z_i\left(1-K_i\right)\bigg/\left[1+\left(K_i-1\right)\beta\right]\bigg\}=0, \label{eq:5} \\
+	 & \sum_{i=1}^{N}x_i=\sum_{i=1}^{N}y_i=1,  \label{eq:5-2}
 \end{align}
 where $x_i$ is the mole fraction of component $i$ in liquid phase, $y_i$ is the mole fraction of component $i$ in gas/vapor phase, $z_i$ is the mole fraction of component $i$ in the mixture, $\beta$ is the vapor mole fraction, $K_i$ is the equilibrium constant of component $i$, $K_i=y_i/x_i$. %Eq.~(\ref{eq:5}) is the Rachford-Rice equation, which is an additional constraint to the equilibrium solver as used in \citet{saha1997isoenergetic} obtained from the conservation of each component.
 
@@ -187,31 +187,31 @@ where $x_i$ is the mole fraction of component $i$ in liquid phase, $y_i$ is the 
 
 
 %The liquid phase and vapor phase properties are described by a multicomponent PR EOS. With a given temperature and pressure, the compressibility factor of each phase ($Z=PV/RT$) can be obtained analitialclly.
- 
+
 The fugacity formula of PR EOS is shown below \cite{yi2019multicomponent}:
 \begin{align}
-f_{i,p}=P \chi_i \exp \left\{\frac{b_i}{b_p}(Z_p - 1) - \ln(Z_p-\frac{b_p P}{RT}) - \frac{a_p} {2\sqrt{2} b_p R T} \left(\frac{2 \sum_j {x_j a_j} } {a_p} - \frac {b_i} {b_p}\right) \right. \nonumber\\
-\left.\times \ln\left[\frac{V_p + \left(1+\sqrt{2}\right)b_p} {V_p + \left(1-\sqrt{2}\right) b_p}\right]\right\}, \label{fuga}
+	f_{i,p}=P \chi_i \exp \left\{\frac{b_i}{b_p}(Z_p - 1) - \ln(Z_p-\frac{b_p P}{RT}) - \frac{a_p} {2\sqrt{2} b_p R T} \left(\frac{2 \sum_j {x_j a_j} } {a_p} - \frac {b_i} {b_p}\right) \right. \nonumber \\
+	\left.\times \ln\left[\frac{V_p + \left(1+\sqrt{2}\right)b_p} {V_p + \left(1-\sqrt{2}\right) b_p}\right]\right\}, \label{fuga}
 \end{align}
 where $\chi_i$ is the mole fraction of component $i$ in phase $p$ (for liquid, $\chi_i=x_i$; for vapor phase, $\chi_i=y_i$). $Z_p$ is the compressibility factor of phase $p$. $a_p$ and $b_p$ are the mixture energy parameter and mixture co-volume parameter of phase $p$, respectively. Note that specie parameters $a_i$ and $b_i$ only depend on the pure component properties.
 
 Eqs.~(\ref{eq:4}-\ref{fuga}) are solved based on the successive substitution method \cite{michelsen2007thermodynamic}. The flow chart of TP flash solution process is shown in Fig.~\ref{FC} (left).  The Wilson equation is commonly used to obtain initial guess \cite{wilson1964vapor}:
 \begin{equation}
-K_{i,wil}=e^{5.373(1+\omega_i)(1-T_{c_i}/T_i)}P_{c_i}/P_i
+	K_{i,wil}=e^{5.373(1+\omega_i)(1-T_{c_i}/T_i)}P_{c_i}/P_i
 \end{equation}
 \comment{
 However, when dealing with high-pressure conditions, the Wilson equation may encounter difficulties in accurately capturing phase separation, leading to the generation of trivial single-phase solutions. To overcome this limitation, we have made modifications to the Wilson equation to improve its ability to obtain potential phase separation solutions. It is important to note that species with larger equilibrium constants exhibit a greater inclination to enter the vapor phase, while species with smaller constants tend to remain in the liquid phase. In order to enhance the representation of phase separation, we have further strengthened this inherent tendency. Specifically, we have amplified the impact of larger equilibrium constants by increasing their values, and simultaneously reduced the influence of smaller constants by decreasing their values.
 
-\begin{equation} 
-K_{i,init} = 
-\begin{cases}
- K_{i,wil}\phi\gamma  &\text{if }  K_{i,wil} = max_j \left(K_{j,wil}\right) \\
- K_{i,wil}\phi/\gamma & \text{otherwise} 
-\end{cases}  
+\begin{equation}
+	K_{i,init} =
+	\begin{cases}
+		K_{i,wil}\phi\gamma  & \text{if }  K_{i,wil} = max_j \left(K_{j,wil}\right) \\
+		K_{i,wil}\phi/\gamma & \text{otherwise}
+	\end{cases}
 \end{equation}
 \begin{equation}
-\gamma = \sqrt{max_j \left(K_{j,wil}\right) / min_j \left(K_{j,wil}\right)}\\
-\phi = \left[max_j \left(K_{j,wil}\right) \times min_j \left(K_{j,wil}\right)\right]^{-0.25}
+	\gamma = \sqrt{max_j \left(K_{j,wil}\right) / min_j \left(K_{j,wil}\right)}\\
+	\phi = \left[max_j \left(K_{j,wil}\right) \times min_j \left(K_{j,wil}\right)\right]^{-0.25}
 \end{equation}
 In comparison to the Wilson equation, the newly proposed initial $K$ values exhibit a larger ratio between the maximum and minimum equilibrium constants, and move the product of the two values closer to one. This adjustment provides an initial guess that has stronger phase separation tendencies.
 In the case of three-component systems, where the species with intermediate $K_{init}$ values can potentially exist in either the liquid or gas phase, an inappropriate initial guess can lead to incorrect solutions. To address this issue, we introduce a modification by taking the reciprocal of the intermediate $K_{init}$ value while keeping the other $K_{init}$ values unchanged. This modified array serves as an additional initial condition for the calculation process.
@@ -219,13 +219,13 @@ In the case of three-component systems, where the species with intermediate $K_{
 When multiple initial conditions are employed, it is possible to obtain multiple solutions for the system. To select the final solution from these options, the conventional approach involves choosing the solution with the lowest Gibbs free energy. However, during our actual calculations, we encountered a unique scenario where an exception arose. In this case, although a solution may possess the minimum Gibbs free energy, the compressibility factor ($Z$) of both its liquid and gas phases approaches 1. This implies that the phases resemble an ideal gas, and the established phase equilibrium occurs between two immiscible gaseous phases. While such a solution can be obtained computationally, it is not physical and can lead to computation failures. Through simulation testing in Sec.~\ref{sec:result}, we have identified and ruled out solutions wherein the compressibility factor ($Z$) exceeds 0.87 in the liquid phase. This exclusion criterion ensures the proper functioning of the VLE solver and helps prevent the occurrence of non-physical solutions. }
 
 \begin{figure}[htbp]
-\centering
-\includegraphics[width=0.99\linewidth]{VLE_flowchart2.png}
-\caption{Flow chart of VLE solver. Left: TP flash solver. Middle: PV flash solver (The flow chart for PV flash and PH flash is almost the same, only density $\rho$ is replaced by enthalpy $h$). Right: UV flash solver.}
-\label{FC} 
+	\centering
+	\includegraphics[width=0.99\linewidth]{VLE_flowchart2.png}
+	\caption{Flow chart of VLE solver. Left: TP flash solver. Middle: PV flash solver (The flow chart for PV flash and PH flash is almost the same, only density $\rho$ is replaced by enthalpy $h$). Right: UV flash solver.}
+	\label{FC}
 \end{figure}
 
-Once the initial guess is obtained, we proceed to solve the Rachford-Rice equation (Eq.~\ref{eq:5}) using the Newton-Raphson iteration method to determine the vapor mole fraction $\beta$. Subsequently, $x_i$ and $y_i$ can be calculated using Eqs.~\ref{eq:5-2}. The next step involves evaluating the fugacity using Eq.~\ref{fuga} and examining whether fugacity equilibrium has been achieved (i.e., $\left|f_{i,l}/f_{i,g}-1\right| < tol $). If equilibrium has not been reached, we update the equilibrium constant $K_i$ by multiplying it with the fugacity ratio $K_i=K_i \times f_{i,l}/f_{i,g}$ and then return to the step of solving the Rachford-Rice equation once again. This iterative process continues until the error falls below a specified tolerance $\epsilon$, and $\epsilon$ is $10^{-8}$ in this work, which is sufficient to achieve an accurate solution according to our test. 
+Once the initial guess is obtained, we proceed to solve the Rachford-Rice equation (Eq.~\ref{eq:5}) using the Newton-Raphson iteration method to determine the vapor mole fraction $\beta$. Subsequently, $x_i$ and $y_i$ can be calculated using Eqs.~\ref{eq:5-2}. The next step involves evaluating the fugacity using Eq.~\ref{fuga} and examining whether fugacity equilibrium has been achieved (i.e., $\left|f_{i,l}/f_{i,g}-1\right| < tol $). If equilibrium has not been reached, we update the equilibrium constant $K_i$ by multiplying it with the fugacity ratio $K_i=K_i \times f_{i,l}/f_{i,g}$ and then return to the step of solving the Rachford-Rice equation once again. This iterative process continues until the error falls below a specified tolerance $\epsilon$, and $\epsilon$ is $10^{-8}$ in this work, which is sufficient to achieve an accurate solution according to our test.
 
 
 \textbf{PV flash, UV flash, and PH flash:}
@@ -240,245 +240,470 @@ In contrast, the UV flash solver requires simultaneous guessing and updating of 
 
 
 \subsection{Models of transport properties}
-To evaluate the dynamic viscosity and thermal conductivity at transcritical conditions, the dense fluid formulas (i.e., the Chung's method \cite{chung1988generalized}) are used. This method gives accurate estimations of viscosity and thermal conductivity of polar, non-polar, and associating pure fluids and mixtures. 
+To evaluate the dynamic viscosity and thermal conductivity at transcritical conditions, the dense fluid formulas (i.e., the Chung's method \cite{chung1988generalized}) are used. This method gives accurate estimations of viscosity and thermal conductivity of polar, non-polar, and associating pure fluids and mixtures.
 \subsection{Viscosity}
 The viscosity $\eta$ expressed by Chung is calculated based on low-pressure gas viscosity $\eta_0$.
 Firstly, the low-pressure gas viscosity $\eta_0$ is presented:
 \begin{align}
-    \eta_0 &= 4.0785 \times 10^{-6} \frac{\sqrt{M_mT}}{V_{c,m}^{2/3}\Omega^*}F_c
+	\eta_0 & = 4.0785 \times 10^{-6} \frac{\sqrt{M_mT}}{V_{c,m}^{2/3}\Omega^*}F_c
 \end{align}
 where the subscript $m$ indicates mixture quantities, $\mu_0$ is in $Pa\cdot s$, $M$ is molecular weight in mol and $V_{c}$ is the critical volume in $\text{cm}^3/\text{mol}$ and given by $ V_{c,m} =\left(\frac{\sigma_m}{0.809}\right)^3$. The Lennard-Jones parameter $\sigma$ is determined using the critical volume of each component:
 \begin{align}
-    \sigma_m^3 &= \sum_i\sum_j x_i x_j \sigma_{ij}^3\\
-    \sigma_{ij} &= \xi_{ij} \sqrt{\sigma_i \sigma_j}\\
-    \sigma_i &= 0.809 V_{c,i}^{1/3}
+	\sigma_m^3  & = \sum_i\sum_j x_i x_j \sigma_{ij}^3 \\
+	\sigma_{ij} & = \xi_{ij} \sqrt{\sigma_i \sigma_j}  \\
+	\sigma_i    & = 0.809 V_{c,i}^{1/3}
 \end{align}
 where $x_i$ is mole fraction of component $i$.
 $M_m$ is formulated as
 \begin{align}
-    M_m &= \left[\frac{\sum_i\sum_j x_i x_j\frac{\epsilon_{ij}}{k}\sigma_{ij}^2\sqrt{M_{ij}}}{\frac{\epsilon_m}{k}\sigma_m^2}\right]^2 \\
-    M_{ij} & = \frac{2M_iM_j}{M_i+M_j}\\
-    \frac{\epsilon_m}{k} &= \frac{\sum_i\sum_j x_i x_j\left(\frac{\epsilon_{ij}}{k}\right) \sigma_{ij}^3}{\sigma_m^3 }\\
-    \frac{\epsilon_{ij}}{k} &= \zeta_{ij} \sqrt{ \frac{\epsilon_{i}}{k} \frac{\epsilon_{j}}{k}}\\
-    \frac{\epsilon_i}{k} &= \frac{T_{c,i}}{1.2593}
+	M_m                     & = \left[\frac{\sum_i\sum_j x_i x_j\frac{\epsilon_{ij}}{k}\sigma_{ij}^2\sqrt{M_{ij}}}{\frac{\epsilon_m}{k}\sigma_m^2}\right]^2 \\
+	M_{ij}                  & = \frac{2M_iM_j}{M_i+M_j}                                                                                                     \\
+	\frac{\epsilon_m}{k}    & = \frac{\sum_i\sum_j x_i x_j\left(\frac{\epsilon_{ij}}{k}\right) \sigma_{ij}^3}{\sigma_m^3 }                                  \\
+	\frac{\epsilon_{ij}}{k} & = \zeta_{ij} \sqrt{ \frac{\epsilon_{i}}{k} \frac{\epsilon_{j}}{k}}                                                            \\
+	\frac{\epsilon_i}{k}    & = \frac{T_{c,i}}{1.2593}
 \end{align}
 where $T_{c,i}$ is the critical temperature of component $i$ in K, $k$ is the Boltzmann's constant, and $\epsilon$ is the minimum of the pair-potential energy. The binary interaction parameter $\xi_{ij}$ and $\zeta_{ij}$ are typically set to unity \cite{chung1988generalized}.
 
 The factor $F_c$ and the collision integral $\Omega^*$ are formulated as:
 \begin{align}
-F_c &= 1-0.2756\omega_m +0.059035 \mu_{r,m}^4+\kappa_m \\
-\Omega^* &=\frac{A}{T^{*B}} +\frac{C}{e^{D T^*}} + \frac{E}{e^{F T^*}} +G T^{*B} \sin(ST^{*W} -H)
+	F_c      & = 1-0.2756\omega_m +0.059035 \mu_{r,m}^4+\kappa_m                                       \\
+	\Omega^* & =\frac{A}{T^{*B}} +\frac{C}{e^{D T^*}} + \frac{E}{e^{F T^*}} +G T^{*B} \sin(ST^{*W} -H)
 \end{align}
 where $\omega$ is the acentric factor, $\mu_r$ is the dimensionless dipole moment ($\mu_{r,m} = \frac{131.3 \mu_m}{\sqrt{V_{c,m}T_{c,m}}}$, and $T_{c,m} =\frac{1.2593 \epsilon_m}{k}$), $\kappa$ is a correction factor for hydrogen-bonding effect of associating substances, and $T^*$ is dimensionless temperature given by $T^* = \frac{kT}{\epsilon_m}$. The other parameter are $A = 1.16145, B = 0.14874, C = 0.52487, D = 0.77320, E = 2.16178, F = 2.43787, G = -6.435\times 10^{-4}, H = 7.273 71, S = 18.0323$, and $W = -0.768 30$.
 
 The mixing rules used for mixture quantities $\omega_m$ and $\mu_m$ are given below:
 \begin{align}
-    \omega_m &= \frac{\sum_i\sum_j x_ix_j \omega_{ij}\sigma_{ij}^3}{\sigma_m^3}\\
-    \omega_{ij} &= \frac{\omega_i+\omega_j}{2}\\
-    \mu_m^4 &= \left(\sum_i\sum_j x_i x_j \mu_{i}^2 \mu_{j}^2  \frac{k}{\epsilon_{ij}\sigma_{ij}^3}\right) \sigma_m^3\frac{\epsilon_m}{k}
+	\omega_m    & = \frac{\sum_i\sum_j x_ix_j \omega_{ij}\sigma_{ij}^3}{\sigma_m^3}                                                            \\
+	\omega_{ij} & = \frac{\omega_i+\omega_j}{2}                                                                                                \\
+	\mu_m^4     & = \left(\sum_i\sum_j x_i x_j \mu_{i}^2 \mu_{j}^2  \frac{k}{\epsilon_{ij}\sigma_{ij}^3}\right) \sigma_m^3\frac{\epsilon_m}{k}
 \end{align}
 
 The high-pressure viscosity $\mu$ is evaluated as
 \begin{align}
-\eta &= \eta_{\kappa} +\eta_p \\
-\eta_{\kappa} &= \eta_0 \left( \frac{1}{G_2}+A_6 Y \right) \\
-\eta_p &= 36.344\times 10^{-7}\frac{\sqrt{M T_{c,m}}}{V_{c,m}^{2/3}}A_7Y^2G_2 e^{A_8+A_9/T^*+A_{10}/{T^*}^2}
+	\eta          & = \eta_{\kappa} +\eta_p                                                                              \\
+	\eta_{\kappa} & = \eta_0 \left( \frac{1}{G_2}+A_6 Y \right)                                                          \\
+	\eta_p        & = 36.344\times 10^{-7}\frac{\sqrt{M T_{c,m}}}{V_{c,m}^{2/3}}A_7Y^2G_2 e^{A_8+A_9/T^*+A_{10}/{T^*}^2}
 \end{align}
-and 
+and
 \begin{align}
-    Y &= \frac{V_{c,m}}{6V} \\
-    A_{i} &= a_{0,i} + a_{1,i}\omega_m + a_{2,i} \mu_{r,m}^4 + a_{3,i} \kappa_m\\
-    G_1 &= \frac{1-0.5 Y }{(1-Y)^3} \\
-    G_2 &=\frac{ \frac{A_1}{Y} \left(1- e^{-A_4 Y}\right)+ A_2 G_1 e^{A_5 Y}+A_3 G_1 }{A_1A_4+A_2+A_3} 
+	Y     & = \frac{V_{c,m}}{6V}                                                                          \\
+	A_{i} & = a_{0,i} + a_{1,i}\omega_m + a_{2,i} \mu_{r,m}^4 + a_{3,i} \kappa_m                          \\
+	G_1   & = \frac{1-0.5 Y }{(1-Y)^3}                                                                    \\
+	G_2   & =\frac{ \frac{A_1}{Y} \left(1- e^{-A_4 Y}\right)+ A_2 G_1 e^{A_5 Y}+A_3 G_1 }{A_1A_4+A_2+A_3}
 \end{align}
 where $V$ is mixture volume in $\text{cm}^3/\text{mol}$. The coefficients $A_i$ are
 computed using the parameters shown in Table~\ref{Ai_table}.
 
 
 \begin{table}
-    \centering
-    \caption{Coefficients for evaluating the parameters $A_i$.}\label{Ai_table}
-    \begin{threeparttable} 
-\begin{tabular*}{0.8\textwidth}{c|cccc}
-    \toprule
-    i     & $a_{0,i}$        & $a_{1,i}$         & $a_{2,i}$       & $a_{3,i}$   \\
-    \midrule
-    1     & 6.32402          & 50.41190          & -51.68010       & 1189.02000  \\
-    2     & 0.0012102        & -0.0011536        & -0.0062571      & 0.037283    \\
-    3     & 5.28346          & 254.20900         & -168.48100      & 3898.27000  \\
-    4     & 6.62263          & 38.09570          & -8.46414        & 31.41780    \\
-    5     & 19.74540         & 7.63034           & -14.35440       & 31.52670    \\
-    6     & -1.89992         & -12.53670         & 4.98529         & -18.15070   \\
-    7     & 24.27450         & 3.44945           & -11.29130       & 69.34660    \\
-    8     & 0.79716          & 1.11764           & 0.012348        & -4.11661    \\
-    9     & -0.23816         & 0.067695          & -0.81630        & 4.02528     \\
-    10    & 0.068629         & 0.34793           & 0.59256         & -0.72663    \\
-    \bottomrule
-\end{tabular*}
-\begin{tablenotes}
-    \footnotesize    
-    \item $A_{i} = a_{0,i} + a_{1,i}\omega_m + a_{2,i} \mu_{r,m}^4 + a_{3,i} \kappa_m$\\
-  \end{tablenotes}
-\end{threeparttable}
+	\centering
+	\caption{Coefficients for evaluating the parameters $A_i$.}\label{Ai_table}
+	\begin{threeparttable}
+		\begin{tabular*}{0.8\textwidth}{c|cccc}
+			\toprule
+			i     & $a_{0,i}$        & $a_{1,i}$         & $a_{2,i}$       & $a_{3,i}$   \\
+			\midrule
+			1     & 6.32402          & 50.41190          & -51.68010       & 1189.02000  \\
+			2     & 0.0012102        & -0.0011536        & -0.0062571      & 0.037283    \\
+			3     & 5.28346          & 254.20900         & -168.48100      & 3898.27000  \\
+			4     & 6.62263          & 38.09570          & -8.46414        & 31.41780    \\
+			5     & 19.74540         & 7.63034           & -14.35440       & 31.52670    \\
+			6     & -1.89992         & -12.53670         & 4.98529         & -18.15070   \\
+			7     & 24.27450         & 3.44945           & -11.29130       & 69.34660    \\
+			8     & 0.79716          & 1.11764           & 0.012348        & -4.11661    \\
+			9     & -0.23816         & 0.067695          & -0.81630        & 4.02528     \\
+			10    & 0.068629         & 0.34793           & 0.59256         & -0.72663    \\
+			\bottomrule
+		\end{tabular*}
+		\begin{tablenotes}
+			\footnotesize
+			\item $A_{i} = a_{0,i} + a_{1,i}\omega_m + a_{2,i} \mu_{r,m}^4 + a_{3,i} \kappa_m$\\
+		\end{tablenotes}
+	\end{threeparttable}
 \end{table}
 
 \subsection{Mass diffusivity}
 The high-pressure thermal conductivity from Chung's method \cite{chung1988generalized} is formulated as:
 
 \begin{align}
-    \lambda &= \lambda_{\kappa} +\lambda_p \\
-    \lambda_{\kappa} &= \lambda_0 \left( \frac{1}{H}+B_6 Y \right)  \label{eq:lambda1}\\
-    \lambda_p &= 1.272\times 10^{-1}\frac{\sqrt{\frac{ T_{c,m}}{M_m}}}{V_{c,m}^{2/3}}B_7Y^2H \sqrt{\frac{T}{T_{c,m}}}\label{eq:lambda2}
+	\lambda          & = \lambda_{\kappa} +\lambda_p                                                                                            \\
+	\lambda_{\kappa} & = \lambda_0 \left( \frac{1}{H}+B_6 Y \right)  \label{eq:lambda1}                                                         \\
+	\lambda_p        & = 1.272\times 10^{-1}\frac{\sqrt{\frac{ T_{c,m}}{M_m}}}{V_{c,m}^{2/3}}B_7Y^2H \sqrt{\frac{T}{T_{c,m}}}\label{eq:lambda2}
 \end{align}
-where $\lambda_0$ is the thermal conductivity of low-pressure gas in W/mK given by 
+where $\lambda_0$ is the thermal conductivity of low-pressure gas in W/mK given by
 \begin{align}
-    \lambda_0 &=31200 \frac{\eta_0\Psi}{M_m}\\
-    \Psi &= 1 +\alpha\frac{0.215 + 0.2828\alpha-1.061\beta+0.2665Z }{0.6366 +\beta Z +1.061\alpha \beta }\\
-    \alpha &= \frac{C_v}{R} -\frac{3}{2}\\
-    \beta &= 0.7862 - 0.7109 \omega_m + 1.3168 \omega_m^2\\
-    Z &= 2.0+10.5 \left(\frac{T}{T_{c,m}}\right)^2
+	\lambda_0 & =31200 \frac{\eta_0\Psi}{M_m}                                                                   \\
+	\Psi      & = 1 +\alpha\frac{0.215 + 0.2828\alpha-1.061\beta+0.2665Z }{0.6366 +\beta Z +1.061\alpha \beta } \\
+	\alpha    & = \frac{C_v}{R} -\frac{3}{2}                                                                    \\
+	\beta     & = 0.7862 - 0.7109 \omega_m + 1.3168 \omega_m^2                                                  \\
+	Z         & = 2.0+10.5 \left(\frac{T}{T_{c,m}}\right)^2
 \end{align}
 where $C_v$ is ideal gas heat capacity at constant volume, and $R$ is gas constant.
 
 The remaining terms of Eq.~\ref{eq:lambda1}-\ref{eq:lambda2} are computed as
 \begin{align}
-    H &= \frac{\frac{B_1}{Y}\left(1-e^{-B_4Y}\right) +B_2G_1 e^{B_5Y}+B_3 G_1}{B_1B_4 +B_2 +B_3}\\
-    B_{i} &= b_{0,i} + b_{1,i}\omega_m + b_{2,i} \mu_{r,m}^4 + b_{3,i} \kappa_m
+	H     & = \frac{\frac{B_1}{Y}\left(1-e^{-B_4Y}\right) +B_2G_1 e^{B_5Y}+B_3 G_1}{B_1B_4 +B_2 +B_3} \\
+	B_{i} & = b_{0,i} + b_{1,i}\omega_m + b_{2,i} \mu_{r,m}^4 + b_{3,i} \kappa_m
 \end{align}
 The coefficients $B_i$ are computed using the parameters shown in Table~\ref{Bi_table}.
 
 
 \begin{table}
-    \centering
-    \caption{Coefficients for evaluating the parameters $B_i$.}\label{Bi_table}
-    \begin{threeparttable} 
-\begin{tabular*}{0.8\textwidth}{c|cccc}
-    \toprule
-    i     & $b_{0,i}$        & $b_{1,i}$         & $b_{2,i}$       & $b_{3,i}$   \\
-    \midrule
-    1     & 2.41657          & 0.74824           & -0.91858        & 121.72100   \\
-    2     & -0.50924         & -1.50936          & -49.99120       & 69.98340    \\
-    3     & 6.61069          & 5.62073           & 64.75990        & 27.03890    \\
-    4     & 14.54250         & -8.91387          & -5.63794        & 74.34350    \\
-    5     & 0.79274          & 0.82019           & -0.69369        & 6.31734     \\
-    6     & -5.86340         & 12.80050          & 9.58926         & -65.52920   \\
-    7     & 81.17100         & 114.15800         & -60.84100       & 466.77500   \\
-    \bottomrule
-\end{tabular*}
-\begin{tablenotes}
-    \footnotesize    
-    \item $B_{i} = b_{0,i} + b_{1,i}\omega_m + b_{2,i} \mu_{r,m}^4 + b_{3,i} \kappa_m$\\
-  \end{tablenotes}
-\end{threeparttable}
+	\centering
+	\caption{Coefficients for evaluating the parameters $B_i$.}\label{Bi_table}
+	\begin{threeparttable}
+		\begin{tabular*}{0.8\textwidth}{c|cccc}
+			\toprule
+			i     & $b_{0,i}$        & $b_{1,i}$         & $b_{2,i}$       & $b_{3,i}$   \\
+			\midrule
+			1     & 2.41657          & 0.74824           & -0.91858        & 121.72100   \\
+			2     & -0.50924         & -1.50936          & -49.99120       & 69.98340    \\
+			3     & 6.61069          & 5.62073           & 64.75990        & 27.03890    \\
+			4     & 14.54250         & -8.91387          & -5.63794        & 74.34350    \\
+			5     & 0.79274          & 0.82019           & -0.69369        & 6.31734     \\
+			6     & -5.86340         & 12.80050          & 9.58926         & -65.52920   \\
+			7     & 81.17100         & 114.15800         & -60.84100       & 466.77500   \\
+			\bottomrule
+		\end{tabular*}
+		\begin{tablenotes}
+			\footnotesize
+			\item $B_{i} = b_{0,i} + b_{1,i}\omega_m + b_{2,i} \mu_{r,m}^4 + b_{3,i} \kappa_m$\\
+		\end{tablenotes}
+	\end{threeparttable}
 \end{table}
 
 
 \subsection{Thermal conductivity}
 For mass diffusivity, we used a mixture-averaged mass diffusion model \cite{kee1996chemkin}. The mass diffusion coefficient $D_i$ of specie $i$ is defined as
 \begin{equation}
-D_i=\frac{1-Y_i}{\sum^N_{j\neq i}z_j/D_{j,i}},\label{massdiff}
+	D_i=\frac{1-Y_i}{\sum^N_{j\neq i}z_j/D_{j,i}},\label{massdiff}
 \end{equation}
-where $Y_i$ and $z_i$ are the mass and mole fractions of component $i$, respectively; $D_{i,j}$ is the binary mass diffusion coefficient of component $i$ in component $j$ and is formulated as 
+where $Y_i$ and $z_i$ are the mass and mole fractions of component $i$, respectively; $D_{i,j}$ is the binary mass diffusion coefficient of component $i$ in component $j$ and is formulated as
 %, which is evaluated by Fuller’s model \cite{fuller1966new} with Takahashi’s correction \cite{takahashi1975preparation} for high pressures as:
 \begin{align}
-    D_{i,j} = \phi \frac{1.00\times 10^-3 T^{1.75}\sqrt{1/M_i+1/M_j}}{p\left(v_i^{1/3}+v_j^{1/3}\right)^2 }
+	D_{i,j} = \phi \frac{1.00\times 10^-3 T^{1.75}\sqrt{1/M_i+1/M_j}}{p\left(v_i^{1/3}+v_j^{1/3}\right)^2 }
 \end{align}
-where the dimensionless special diffusion parameter, $\nu$, is calculated from atomic diffusion volume \cite{fuller1966new}. In this study, the value $\nu$ used are: \ce{N2}: 17.9, \ce{CO2}: 26.9, \ce{H2O}:12.7, $\text{C}_x\text{H}_y\text{O}_z$: $16.5x+1.98y+5.48z$. $\Phi=f(T_r,P_r)$ is from Takahashi’s model \cite{takahashi1975preparation}, the reduced temperature $T_r$ and presure $P_r$ are defined as 
+where the dimensionless special diffusion parameter, $\nu$, is calculated from atomic diffusion volume \cite{fuller1966new}. In this study, the value $\nu$ used are: \ce{N2}: 17.9, \ce{CO2}: 26.9, \ce{H2O}:12.7, $\text{C}_x\text{H}_y\text{O}_z$: $16.5x+1.98y+5.48z$. $\Phi=f(T_r,P_r)$ is from Takahashi’s model \cite{takahashi1975preparation}, the reduced temperature $T_r$ and presure $P_r$ are defined as
 \begin{align}
- T_r &= \left. T \middle/\frac{x_i T_{c,i} +x_j T_{c,j}}{x_i+x_j} \right. \\
- P_r &= \left. T \middle/\frac{x_i P_{c,i} +x_j P_{c,j}}{x_i+x_j} \right. \\
+	T_r & = \left. T \middle/\frac{x_i T_{c,i} +x_j T_{c,j}}{x_i+x_j} \right. \\
+	P_r & = \left. T \middle/\frac{x_i P_{c,i} +x_j P_{c,j}}{x_i+x_j} \right. \\
 \end{align}
 where $T_{c,i}$ and $P_{c,i}$ are the critical temperature and pressure of component $i$, respectively.
 
-The parameter $\Phi$ are evaluated using Table \ref{phi_table}. Table \ref{phi_table} lists the parameters used to determine $\Phi$ at several $P_r$ values varying from 0.1 to 5. For a given $P_r$ in the table, $\Phi= \Phi_0\left(1-C_1{T_r}^{-C_2}\right)\left(1-C_3{T_r}^{-C_4}\right)$. For other $P_r$, $\Phi$ is obatined using linear interpolation. 
+The parameter $\Phi$ are evaluated using Table \ref{phi_table}. Table \ref{phi_table} lists the parameters used to determine $\Phi$ at several $P_r$ values varying from 0.1 to 5. For a given $P_r$ in the table, $\Phi= \Phi_0\left(1-C_1{T_r}^{-C_2}\right)\left(1-C_3{T_r}^{-C_4}\right)$. For other $P_r$, $\Phi$ is obatined using linear interpolation.
 
 \begin{table}
-    \centering
-    \caption{Coefficients for evaluating the parameters $\Phi$.}\label{phi_table}
-    \begin{threeparttable} 
-\begin{tabular*}{0.8\textwidth}{c|ccccc}
-    \toprule
-    $P_r$   & $\Phi_0$       & $C_1$            & $C_2$        & $C_3$    &$C_4$        \\
-    \midrule
-    0.1     & 1.01          & 0.038042         & 1.52267      & 0.0        & 0.0       \\
-    0.2     & 1.01          & 0.067433         & 2.16794      & 0.0        & 0.0       \\
-    0.3     & 1.01          & 0.098317         & 2.42910      & 0.0        & 0.0       \\
-    0.4     & 1.01          & 0.137610         & 2.77605      & 0.0        & 0.0       \\
-    0.5     & 1.01          & 0.175081         & 2.98256      & 0.0        & 0.0       \\
-    0.6     & 1.01          & 0.216376         & 3.11384      & 0.0        & 0.0       \\
-    0.8     & 1.01          & 0.314051         & 3.50264      & 0.0        & 0.0       \\
-    1.0     & 1.02          & 0.385736         & 3.07773      & 0.141211   & 13.45454  \\
-    1.2     & 1.02          & 0.514553         & 3.54744      & 0.278407   & 14.00000  \\
-    1.4     & 1.02          & 0.599184         & 3.61216      & 0.372683   & 10.00900  \\
-    1.6     & 1.02          & 0.557725         & 3.41882      & 0.504894   & 8.57519   \\
-    1.8     & 1.03          & 0.593007         & 3.18415      & 0.678469   & 10.37483  \\
-    2.0     & 1.03          & 0.696001         & 3.37660      & 0.665702   & 11.21674  \\
-    2.5     & 1.04          & 0.790770         & 3.27984      & 0.0        & 0.0       \\
-    3.0     & 1.05          & 0.502100         & 2.39031      & 0.602907   & 6.19043   \\
-    4.0     & 1.06          & 0.837452         & 3.23513      & 0.0        & 0.0       \\
-    5.0     & 1.07          & 0.890390         & 3.13001      & 0.0        & 0.0       \\
-    \bottomrule
-\end{tabular*}
-\begin{tablenotes}
-    \footnotesize    
-    \item $\Phi_0$ is the $\Phi$ at $T=\infty$.\\
-  \end{tablenotes}
-\end{threeparttable}
+	\centering
+	\caption{Coefficients for evaluating the parameters $\Phi$.}\label{phi_table}
+	\begin{threeparttable}
+		\begin{tabular*}{0.8\textwidth}{c|ccccc}
+			\toprule
+			$P_r$   & $\Phi_0$       & $C_1$            & $C_2$        & $C_3$    &$C_4$        \\
+			\midrule
+			0.1     & 1.01          & 0.038042         & 1.52267      & 0.0        & 0.0       \\
+			0.2     & 1.01          & 0.067433         & 2.16794      & 0.0        & 0.0       \\
+			0.3     & 1.01          & 0.098317         & 2.42910      & 0.0        & 0.0       \\
+			0.4     & 1.01          & 0.137610         & 2.77605      & 0.0        & 0.0       \\
+			0.5     & 1.01          & 0.175081         & 2.98256      & 0.0        & 0.0       \\
+			0.6     & 1.01          & 0.216376         & 3.11384      & 0.0        & 0.0       \\
+			0.8     & 1.01          & 0.314051         & 3.50264      & 0.0        & 0.0       \\
+			1.0     & 1.02          & 0.385736         & 3.07773      & 0.141211   & 13.45454  \\
+			1.2     & 1.02          & 0.514553         & 3.54744      & 0.278407   & 14.00000  \\
+			1.4     & 1.02          & 0.599184         & 3.61216      & 0.372683   & 10.00900  \\
+			1.6     & 1.02          & 0.557725         & 3.41882      & 0.504894   & 8.57519   \\
+			1.8     & 1.03          & 0.593007         & 3.18415      & 0.678469   & 10.37483  \\
+			2.0     & 1.03          & 0.696001         & 3.37660      & 0.665702   & 11.21674  \\
+			2.5     & 1.04          & 0.790770         & 3.27984      & 0.0        & 0.0       \\
+			3.0     & 1.05          & 0.502100         & 2.39031      & 0.602907   & 6.19043   \\
+			4.0     & 1.06          & 0.837452         & 3.23513      & 0.0        & 0.0       \\
+			5.0     & 1.07          & 0.890390         & 3.13001      & 0.0        & 0.0       \\
+			\bottomrule
+		\end{tabular*}
+		\begin{tablenotes}
+			\footnotesize
+			\item $\Phi_0$ is the $\Phi$ at $T=\infty$.\\
+		\end{tablenotes}
+	\end{threeparttable}
 \end{table}
 
 
+\subsection{Analytical framework for VLE}
+\label{sec:analytical}
+
+The first-order derivatives of thermodynamic properties considering phase change are required when calculating the speed of sound (Eq.~\ref{eq:soundspeed}), solving the VLE system (e.g., using the Newton-Raphson iteration method), and using the ISAT-VLE method (e.g., evaluating the Jacobian matrix $\left.\frac{\partial  \mathbf{F}}{\partial \mathbf{x}}\right|_{\mathbf{x}_0}$). These derivatives can be obtained numerically by a perturbation method, which is more computationally expensive and introduces additional errors. Most importantly, profiles of thermodynamic properties can have discontinuities/jumps at the phase boundaries, and hence the numerical derivatives from the perturbation method can be incorrect and diverge the simulation. To address all the above challenges, We developed an analytical method to evaluate the required derivatives.
+In order to calculate the derivatives of thermodynamic properties considering phase change, after obtaining a few derivatives listed below, the calculation can be finished using a simple framework.
+\begin{align}
+	\left(\frac{\partial x_k}{\partial T}\right)_{P,\mathbf{z}},\left(\frac{\partial y_k}{\partial T}\right)_{P,\mathbf{z}},\left(\frac{\partial x_k}{\partial P}\right)_{T,\mathbf{z}},\left(\frac{\partial y_k}{\partial P}\right)_{T,\mathbf{z}},\left(\frac{\partial x_k}{\partial z_i}\right)_{T,P,z_{s,s\neq i}},\left(\frac{\partial y_k}{\partial z_i}\right)_{T,P,z_{s,s\neq i}} \label{eq:base}
+\end{align}
+%The formula of these terms is provided in Appendix ~\ref{App:VLE}, and its derivation is based on Tudisco and Menon's work \cite{tudisco2020analytical}.
+
+To get the formulation of all derivatives in Eq.~\ref{eq:base}, following derivatives need to be obtained first:
+\begin{align}
+	\left(\frac{\partial x_k}{\partial T}\right)_{P,\mathbf{z}},\left(\frac{\partial y_k}{\partial T}\right)_{P,\mathbf{z}},\left(\frac{\partial x_k}{\partial P}\right)_{T,\mathbf{z}},\left(\frac{\partial y_k}{\partial P}\right)_{T,\mathbf{z}},\left(\frac{\partial x_k}{\partial z_i}\right)_{T,P,z_{s,s\neq i}},\left(\frac{\partial y_k}{\partial z_i}\right)_{T,P,z_{s,s\neq i}} \label{eq:app:6derivatives}
+\end{align}
+To obtain them, we follow Tudisco and Menon's work \cite{tudisco2020analytical} by calculating the following derivatives.
+\begin{align}
+	x_{T,k}=\left(\frac{\partial v_k}{\partial T}\right)_{P,\mathbf{z}},\quad
+	x_{P,k}=\left(\frac{\partial v_k}{\partial P}\right)_{T,\mathbf{z}},\quad
+	x_{N,j}^i=\left(\frac{\partial N_{j,v}}{\partial N_i}\right)_{T,P,N_{k,k\neq i}}
+\end{align}
+where $v_k$ is the mole fraction of component $k$ in the vapor phase of the total mixture ($v_k = \beta y_k$), $\mathbf{z}$ is the mixture mole fraction in vector form,
+$N_i$ is the total number of moles of component $i$ in the mixture, and $N_{k,v}$ are the number of moles of component $k$ in vapor phase.
+
+These derivatives are given by the solution of three linear equations:
+\begin{align}
+	\mathbfit{A} \mathbfit{x}_T = \mathbfit{b}_T, \quad
+	\mathbfit{A} \mathbfit{x}_P = \mathbfit{b}_P, \quad
+	\mathbfit{C}\mathbfit{x}_N^i=\mathbfit{b}_N^i, i = 1,...,N
+\end{align}
+where $N$ is the number of species.
+
+The coefficients of linear systems derivatives are shown:
+\begin{align}
+	\mathit{A}_{ik} = \left( 1- \frac{\delta_{ki}z_k}{y_k x_k}\right) +\sum_{j=1}^N\left[(1-\beta)\left(\frac{\partial \ln\phi_{i,v}}{\partial y_j}\right)_{T,P,y_{s,s\neq j}}\left(y_i-\delta_{kj}\right)+\right. \nonumber \\
+	\left.\beta\left(\frac{\partial \ln\phi_{i,l}}{\partial x_j}\right)_{T,P,x_{s,s\neq j}}\left(x_j-\delta_{jk}\right)\right]
+\end{align}
+\begin{align}
+	C_{kj}=\sum_{s=1}^N\left[\left(\frac{\partial \ln\phi_{k,l}}{\partial x_s}\right)_{T,p,x_{r,r\neq s}}\left(\frac{\delta_{sj}-x_s}{1-\beta}\right)+\left(\frac{\partial \ln\phi_{k,v}}{\partial y_s}\right)_{T,p,y_{r,r\neq s}}\left(\frac{\delta_{sj}-y_s}{\beta}\right)\right] \nonumber \\
+	+\frac{1}{x_k}\frac{\delta_{kj}-x_k}{1-\beta}+\frac{1}{y_k}\frac{\delta_{kj}-y_k}{\beta}
+\end{align}
+\begin{align}
+	b_{T,i}=\beta(1-\beta)\left[\left(\frac{\partial \ln\phi_{i,v}}{\partial T}\right)_{P,\mathbf{y}}-\left(\frac{\partial \ln\phi_{i,l}}{\partial T}\right)_{P,\mathbf{x}}\right]
+\end{align}
+
+\begin{align}
+	b_{P,i}=\beta(1-\beta)\left[\left(\frac{\partial \ln\phi_{i,v}}{\partial P}\right)_{T,\mathbf{y}}-\left(\frac{\partial \ln\phi_{i,l}}{\partial P}\right)_{T,\mathbf{x}}\right]
+\end{align}
+
+%\begin{align}
+%b_{P,i}=\beta(1-\beta)\left[\left(\frac{\partial \ln\phi_{i,v}}{\partial P}\right)_{T,\mathbf{y}}-\left(\frac{\partial \ln\phi_{i,l}}{\partial P}\right)_{T,\mathbf{x}}\right]
+%\end{align}
+
+\begin{align}
+	b_{N,k}^i=\sum_{j=1}^N\delta_{ji}\Bigg\{\sum_{s=1}^N\left[\left(\frac{\partial \ln\phi_{k,l}}{\partial x_s}\right)_{T,p,x_s}\left(\frac{\delta_{sj}-x_s}{1-\beta}\right)\right]+\frac{\delta_{ji}}{x_k}\frac{\delta_{kj}-x_k}{1-\beta}\Bigg\}
+\end{align}
+
+These three linear equations are obtained by taking the derivative of the fugacity equation, and the derivatives with respect to pressure and temperature have the same coefficient matrix $A$. The linear systems are solved using the LU decomposition method in the current work.
+Using the relation $ \beta = \sum_i v_i$, the $\beta $ derivative is obtained:
+\begin{align}
+	\left(\frac{\partial \beta }{\partial T}\right)_{P,\mathbf{z}} = \sum_{k=1}^N \left(\frac{\partial v_k}{\partial T}\right)_{P,\mathbf{z}},\left(\frac{\partial \beta}{\partial P}\right)_{T,\mathbf{z}} = \sum_{k=1}^N \left(\frac{\partial v_k}{\partial P}\right)_{T,\mathbf{z}} \label{eq:dbetafPT}
+\end{align}
+And using the relation between $v_i,\beta,x_i,y_i$, first 4 terms in Eq.~\ref{eq:app:6derivatives} can be obtained
+$$\left(\frac{\partial x_i}{\partial T}\right)_{P,\mathbf{z}} = \left(\frac{\partial (z_i-v_i)/(1-\beta)}{\partial T}\right)_{P,\mathbf{z}}= \frac{x_i}{1-\beta}\sum_{k=1}^N\left(1-\frac{\delta_{ik}}{x_k}\right)\left(\frac{\partial v_k}{\partial T}\right)_{P,\mathbf{z}}$$
+$$\left(\frac{\partial y_i}{\partial T}\right)_{P,\mathbf{z}} = \left(\frac{\partial v_i/\beta}{\partial T}\right)_{P,\mathbf{z}}= -\frac{y_i}{\beta}\sum_{k=1}^N\left(1-\frac{\delta_{ik}}{y_k}\right)\left(\frac{\partial v_k}{\partial T}\right)_{P,\mathbf{z}}$$
+For derivatives with respect to pressure, similar formulas can be used, with all the $\left(\frac{\partial (\cdot)}{\partial T}\right)_{P,\mathbf{z}}$ replaced by $\left(\frac{\partial (\cdot)}{\partial P}\right)_{T,\mathbf{z}}$.
+
+For the last two terms in Eq.~\ref{eq:app:6derivatives}, we need to deal with the constraints of $\mathbf{z}$ ($\sum_i z_i =1$), which makes a single $z_i$ not a free variable. Here we use an extension method to extend $\mathbf{z}$ to the whole positive space:
+\begin{equation}
+	F(\mathbf{z}) =
+	\begin{cases}
+		F\left(\mathbf{z}\right)                    & \text{if }  \sum_i z_i =1 \\
+		F\left(\frac{\mathbf{z}}{\sum_k z_k}\right) & \text{otherwise}
+	\end{cases}
+\end{equation}
+where $F$ represents any function of mixture mole fraction $z_i$.  With this extension, $F(\mathbf{z}) = F(\mathbf{N})$.  Note that although we extend the function, we only use $\mathbf{z}$ that meets the constraint for calculation, so we can further simplify the results with the constraint $\sum_i z_i =\sum_i N_i = 1$.
+%$$\left(\frac{\partial \beta}{\partial z_i}\right)_{T,P,z_{s,s\neq i}}= \frac{\partial\left(\sum_k N_k^v\right)/\left(\sum_k N_k\right)}{\partial N_i}=\frac{1}{\sum_k N_k}\left[\sum_{j=1}^N\left(\frac{\partial N_j^v}{\partial N_i}\right)_{T,P,N_{s,s\neq j}} -\beta\right] =\sum_{j=1}^N\left(\frac{\partial N_j^v}{\partial N_i}\right)_{T,P,N_{s,s\neq j}} -\beta $$
+Considering $\beta  = \frac{\sum_k N_{k,v}}{\sum_k N_k}$ gives
+\begin{align}
+	\left(\frac{\partial \beta}{\partial z_i}\right)_{T,P,z_{s,s\neq i}}=\left(\frac{\partial \frac{\sum_k N_{k,v}}{\sum_k N_{k}}}{\partial N_i}\right)_{T,P,z_{s,s\neq i}}=\sum_{j=1}^N\left(\frac{\partial N_{j,v}}{\partial N_i}\right)_{T,P,N_{s,s\neq j}} -\beta \label{eq:dbetadz}
+\end{align}
+
+%$$\left(\frac{\partial y_k}{\partial z_i}\right)_{T,P,z_{s,s\neq i}}= \frac{\partial \frac{N_k^v} { \beta \sum_j N_j}}{\partial N_i} = \frac{1}{\beta \sum_j N_j} \sum_{s=1}^N\left(\delta _{sk}-y_k\right)\left(\frac{\partial N_s^v}{\partial N_i}\right)_{T,P,N_{k,k\neq i}}=\frac{1}{\beta} \sum_{s=1}^N\left(\delta _{sk}-y_k\right)\left(\frac{\partial N_s^v}{\partial N_i}\right)_{T,P,N_{k,k\neq i}}$$
+Noticing the relation $y_k=\frac{N_{k,v}} { \beta \sum_j N_j}$ and $x_k=\frac{N_k-N_{k,v}} { (1-\beta) \sum_j N_j}$, the last two term can be derived:
+\begin{align}\left(\frac{\partial y_k}{\partial z_i}\right)_{T,P,z_{s,s\neq i}}= \frac{\partial \frac{N_{k,v}} { \beta \sum_j N_j}}{\partial N_i}=\frac{1}{\beta} \sum_{j=1}^N\left(\delta _{jk}-y_k\right)\left(\frac{\partial N_{j,v}}{\partial N_i}\right)_{T,P,N_{s,s\neq j}}
+\end{align}
+
+%$$\left(\frac{\partial x_k}{\partial z_i}\right)_{T,P,z_{s,s\neq i}}= \frac{\partial \frac{N_k-N_k^v} { (1-\beta) \sum_j N_j}}{\partial N_i} = \frac{1}{(1-\beta) \sum_j N_j} \left[\sum_{s=1}^N\left(\delta _{sk}-y_k\right)\left(\frac{\partial N_s^v}{\partial N_i}\right)_{T,P,N_{k,k\neq i}}+\delta_{ik}-x_k\right]=\frac{1}{1-\beta} \sum_{s=1}^N\left(x_k-\delta_{sk}\right)\left(\frac{\partial N_s^v}{\partial N_i}\right)_{T,P,N_{k,k\neq i}}$$
+
+\begin{align}\left(\frac{\partial x_k}{\partial z_i}\right)_{T,P,z_{s,s\neq i}}= \frac{\partial \frac{N_k-N_{k,v}} { (1-\beta) \sum_j N_j}}{\partial N_i} = \frac{1}{(1-\beta) } \left[\sum_{s=1}^N\left(x_k - \delta _{jk}\right)\left(\frac{\partial N_{j,v}}{\partial N_i}\right)_{T,P,N_{s,s\neq j}}+\delta_{ik}-x_k\right]
+\end{align}
+
+
+
+So far, the calculation of each derivative in Eq.~\ref{eq:base} has been completed. Next we continue to derive the first derivatives of variables required when solving VLE system and using ISAT method.
+
+For single-phase properties, the temperature and pressure derivatives can be obtained using the chain rule:
+\begin{align}
+	\left(\frac{\partial (\cdot)_l}{\partial T}\right)_{P,\mathbf{z}} = \left(\frac{\partial (\cdot)_l}{\partial T}\right)_{P,\mathbf{x}} + \sum_{k=1}^N\left(\frac{\partial (\cdot)_l}{\partial x_k}\right)_{P,T,x_{s,s\neq k}}\left(\frac{\partial x_k}{\partial T}\right)_{P,\mathbf{z}} \label{eq:dvdT}
+\end{align}
+\begin{align}
+	\left(\frac{\partial (\cdot)_v}{\partial T}\right)_{P,\mathbf{z}} = \left(\frac{\partial (\cdot)_v}{\partial T}\right)_{P,\mathbf{y}} + \sum_{k=1}^N\left(\frac{\partial (\cdot)_v}{\partial y_k}\right)_{P,T,y_{s,s\neq k}}\left(\frac{\partial y_k}{\partial T}\right)_{P,\mathbf{z}} \label{eq:dldT}
+\end{align}
+The pressure derivatives use similar formulas with all the $\left(\frac{\partial (\cdot)}{\partial T }\right)$ replaced by $\left(\frac{\partial (\cdot)}{\partial P }\right)$.
+
+The $z$ derivatives are formulated as:
+\begin{align}
+	\left(\frac{\partial (\cdot)_l}{\partial z_i}\right)_{P,T} =  \sum_{k=1}^N\left(\frac{\partial (\cdot)_l}{\partial x_k}\right)_{P,T,x_{s,s\neq k}}\left(\frac{\partial x_k}{\partial z_i}\right)_{P,T,\mathbf{z}} \label{eq:dldz}
+\end{align}
+
+\begin{align}
+	\left(\frac{\partial (\cdot)_v}{\partial z_i}\right)_{P,T} =  \sum_{k=1}^N\left(\frac{\partial (\cdot)_v}{\partial x_k}\right)_{P,T,x_{s,s\neq k}}\left(\frac{\partial y_k}{\partial z_i}\right)_{P,T,\mathbf{z}} \label{eq:dvdz}
+\end{align}
+
+Note that the derivatives such as $\left(\frac{\partial (\cdot)_v}{\partial T}\right)_{P,\mathbf{y}}$,$\left(\frac{\partial (\cdot)_v}{\partial P}\right)_{T,\mathbf{y}}$, $\left(\frac{\partial (\cdot)_v}{\partial y_k}\right)_{P,T,y_{s,s\neq k}}$, are single-phase derivatives, and no phase change calculation is involved. These terms can be directly obtained by taking derivatives of the analytical form of EOS (including the departure functions derived from EOS) and NASA Polynomials.
+
+
+In TP flash, the thermodynamic properties are considered as a function of mixture temperature $T$, pressure $P$, and composition $\mathbf{z}$. The first-order derivatives are required by TP flash calculation (e.g., using the Newton-Raphson iteration method) and also the ISAT of TP flash solutions (e.g., evaluating the Jacobian matrix $\left.\frac{\partial  \mathbf{F}}{\partial \mathbf{x}}\right|_{\mathbf{x}_0} = \left.\frac{\partial  \left(\rho, e, \beta, c\right)}{\partial \left(P,T,\mathbf{z}\right)}\right|_{\mathbf{x}_0}$).
+First, the derivative of $\beta$ has be given in Eq.~\label{eq:dbetafPT} and Eq.~\label{eq:dbetadz}% formulated as: (details are shown in Appendix~\ref{App:VLE})
+
+%\begin{align}
+%\left(\frac{\partial \beta }{\partial T}\right)_{P,\mathbf{z}} = \sum_{k=1}^N \left(\frac{\partial v_k}{\partial T}\right)_{P,\mathbf{z}},\left(\frac{\partial \beta}{\partial P}\right)_{T,\mathbf{z}} = \sum_{k=1}^N \left(\frac{\partial v_k}{\partial P}\right)_{T,\mathbf{z}}, \left(\frac{\partial \beta}{\partial z_i}\right)_{T,P,z_{s,s\neq i}}=\sum_{j=1}^N\left(\frac{\partial N_{j,v}}{\partial N_i}\right)_{T,P,N_{s,s\neq j}} -\beta
+%\end{align}
+%where $v_k$ is the mole fraction of component $k$ in the vapor phase of the total mixture ($v_k = \beta y_k$), 
+%$N_i$ is the total number of moles of component $i$ in the mixture, and $N_{k,v}$ are the number of moles of component $k$ in vapor phase.
+
+The derivative of $\rho$ and $e$ are obtained from Eq.~\ref{eq:rho} and Eq.~\ref{eq:e}.
+\begin{align}
+	\left(\frac{\partial \rho}{\partial T} \right)_{P,\mathbf{z}}=
+	- \frac{\rho^2}{M}\Bigg\{\left(\frac{\partial \beta}{\partial T}\right)_{P,\mathbf{z}}\left(\frac{M_v}{\rho_v}-\frac{M_l}{\rho_l}\right) +
+	\frac{\beta}{\rho_v^2}\left[\rho_v\left(\frac{\partial M_v}{\partial T} \right)_{P,\mathbf{z}}-M_v \left(\frac{\partial \rho_v}{\partial T} \right)_{P,\mathbf{z}}\right]\nonumber \\+
+	\frac{1-\beta}{\rho_l^2}\left[\rho_l\left(\frac{\partial M_l}{\partial T} \right)_{P,\mathbf{z}}-M_l \left(\frac{\partial \rho_l}{\partial T} \right)_{P,\mathbf{z}}\right]\Bigg\}
+\end{align}
+\begin{align}
+	\left(\frac{\partial e}{\partial T}\right)_{P,\mathbf{z}}= \frac{1}{M}\left\{ \left(\frac{\partial \beta}{\partial T}\right)_{P,\mathbf{z}} \left(M_v e_v-M_l e_l\right)+\beta \left[e_v\left(\frac{\partial M_v}{\partial T}\right)_{P,\mathbf{z}}+M_v\left(\frac{\partial e_v}{\partial T}\right)_{P,\mathbf{z}}\right]\right.\nonumber \\ \left.+\left(1-\beta\right)\left[e_l\left(\frac{\partial M_l}{\partial T}\right)_{P,\mathbf{z}}+M_l\left(\frac{\partial e_l}{\partial T}\right)_{P,\mathbf{z}}\right]\right\}
+\end{align}
+The derivatives of single phase properties such as $\left(\frac{\partial e_v}{\partial T}\right)_{P,\mathbf{z}}$,$\left(\frac{\partial M_v}{\partial T}\right)_{P,\mathbf{z}}$,$\left(\frac{\partial \rho_v}{\partial T} \right)_{P,\mathbf{z}}$, can be calculated using Eq.~\ref{eq:dvdT}-\ref{eq:dldT}. For the temperature derivatives, similar formulas can be used, with all the $\left(\frac{\partial (\cdot)}{\partial P}\right)_{T,\mathbf{z}}$ replaced by $\left(\frac{\partial (\cdot)}{\partial T}\right)_{P,\mathbf{z}}$.
+
+Since  $\left(\frac{\partial M}{\partial z_i}\right)_{P,T} \neq 0 $, $z$ derivatives have different formula:
+
+\begin{align}
+	\left(\frac{\partial \rho}{\partial z_i} \right)_{P,T}=
+	- \frac{\rho^2}{M}\Bigg\{\left(\frac{\partial \beta}{\partial z_i}\right)_{P,T}\left(\frac{M_v}{\rho_v}-\frac{M_l}{\rho_l}\right) +
+	\frac{\beta}{\rho_v^2}\left[\rho_v\left(\frac{\partial M_v}{\partial z_i} \right)_{P,T}-M_v \left(\frac{\partial \rho_v}{\partial z_i} \right)_{P,T}\right] \nonumber \\+
+	\frac{1-\beta}{\rho_l^2}\left[\rho_l\left(\frac{\partial M_l}{\partial z_i} \right)_{P,T}-M_l \left(\frac{\partial \rho_l}{\partial z_i} \right)_{P,T}\right]- \frac{M_i-M}{\rho}\Bigg\}
+\end{align}
+\begin{align}
+	\left(\frac{\partial e}{\partial z_i}\right)_{P,T}= \frac{1}{M}\left\{ \left(\frac{\partial \beta}{\partial z_i}\right)_{P,T} \left(M_v e_v-M_l e_l\right)+\beta \left[e_v\left(\frac{\partial M_v}{\partial z_i}\right)_{P,T}+M_v\left(\frac{\partial e_v}{\partial z_i}\right)_{P,T}\right]\right.\nonumber \\ \left.+\left(1-\beta\right)\left[e_l\left(\frac{\partial M_l}{\partial z_i}\right)_{P,T}+M_l\left(\frac{\partial e_l}{\partial z_i}\right)_{P,T}\right] - e \left(M_i-M\right)\right\}
+\end{align}
+The single phase properties derivatives such as $\left(\frac{\partial e_v}{\partial z_i}\right)_{P,T}$,$\left(\frac{\partial M_v}{\partial z_i}\right)_{P,T}$,$\left(\frac{\partial \rho_v}{\partial z_i} \right)_{P,T}$, can be calculated using Eq.~\ref{eq:dldz}-\ref{eq:dvdz}.
+
+%\begin{align}
+%\left(\frac{\partial M_v}{\partial P}\right)_{T,\mathbf{z}} = \sum_{k=1}^N\left(\frac{\partial v_i}{\partial P}\right)_{T,\mathbf{z}} \frac{M_i}{\beta} - \left(\frac{\partial \beta}{\partial P}\right)_{T,\mathbf{z}}\frac{M}{\beta}
+%\end{align}
+%where $M$ is the mixture molar mass. 
+
+The last property, speed of sound, is formulated as
+$c^2 = \frac{1}{\kappa_s\rho}$.
+where $\kappa_s$ is the isentropic compressibility $\kappa_s = \kappa_T -T \alpha_p^2/\rho c_p$.  The isobaric expansivity $\alpha_p$ and isothermal compressibility $\kappa_T$ are defined as $\alpha_p=-\left(\frac{\partial \rho}{\partial T}\right)_{P,\mathbf{z}}/\rho$, $\kappa_T=\left(\frac{\partial \rho}{\partial P}\right)_{T,\mathbf{z}}/\rho $.
+Combining all these equations, the speed of sounds is formulated as:
+
+\begin{align}
+	c = \frac{1}{\sqrt{\left(\frac{\partial\rho}{\partial P}\right)_{T,\mathbf{z}} - \frac{T}{\rho^2 } \left.\left(\frac{\partial\rho}{\partial T}\right)_{P,\mathbf{z}} \middle/ \left[\left(\frac{\partial e}{\partial T}\right)_{P,\mathbf{z}}- \frac{P}{\rho^2}\left(\frac{\partial \rho}{\partial T}\right)_{P,\mathbf{z}}\right]\right.}}, \label{eq:soundspeed}
+\end{align}
+
+The speed of sound depends on the first derivatives,and hence, its derivatives require the computation of second derivatives, which need very complex calculations. Because the derivative of sound speed is only used in the ISAT method to provide a better linear approximation, in fact, by setting its derivative to zero we can still use ISAT error control to obtain a sufficiently accurate solution
+
+
+Based on the formulas of the ($T,P,\mathbf{z}$) system for the TP flash solver, the first derivatives of the ($\rho,P, \mathbf{z}$) system for the PV flash solver and the ($e,\rho, \mathbf{z}$) system for the UV flash solver can be derived using the chain rule (PH solver is coupled with the lookup table method, which doesn't need a Jacobian matrix, so it's not listed here, but it can be similarly obtained using the PV solver's method). Specifically, for the ($\rho,P,\mathbf{z}$) system, a property $F$ is written as $F(\rho(T,P,z),P,z)$, calculating temperature derivative using chain rule gives $\left(\frac{\partial F} {\partial \rho}\right)_{P,\mathbf{z}}\left(\frac{\partial \rho}{\partial T}\right)_{P,\mathbf{z}}= \left(\frac{\partial F}{\partial T}\right)_{P,\mathbf{z}}$. Hence, the density derivative is:
+
+\begin{align}
+	\left(\frac{\partial (\cdot)}{\partial \rho}\right)_{P,\mathbf{z}} =\left. \left(\frac{\partial (\cdot)}{\partial T}\right)_{P,\mathbf{z}} \middle/ \left(\frac{\partial \rho}{\partial T}\right)_{P,\mathbf{z}}\right.
+\end{align}
+To derive the pressure and $z_i$ derivatives, $\left(\frac{\partial T}{\partial P}\right)_{\rho,\mathbf{z}}$ is needed. Taking pressure derivative of constant density equation $\rho(T(P,z),P,z)=Const$ gives $\left(\frac{\partial T} {\partial P}\right)_{\rho,\mathbf{z}}\left(\frac{\partial \rho}{\partial T}\right)_{P,\mathbf{z}}+ \left(\frac{\partial \rho}{\partial P}\right)_{T,\mathbf{z}}=0$, and so, $\left(\frac{\partial T}{\partial P}\right)_{\rho,\mathbf{z}} = - \left(\frac{\partial \rho}{\partial P}\right)_{T,\mathbf{z}}/ \left(\frac{\partial \rho}{\partial T}\right)_{P,\mathbf{z}}$
+Taking pressure and $z_i$ derivative of $F(\rho(T,P,z),P,z)$ and substituting $\left(\frac{\partial T}{\partial P}\right)_{\rho,\mathbf{z}}$ into the results gives:
+\begin{align}
+	\left(\frac{\partial (\cdot)}{\partial P}\right)_{\rho,\mathbf{z}} = \left.-\left(\frac{\partial (\cdot)}{\partial T}\right)_{P,\mathbf{z}} \left(\frac{\partial \rho}{\partial P}\right)_{T,\mathbf{z}}\middle/ \left(\frac{\partial \rho}{\partial T}\right)_{P,\mathbf{z}}+
+	\left(\frac{\partial (\cdot)}{\partial P}\right)_{T,\mathbf{z}}\right.
+\end{align}
+\begin{align}
+	\left(\frac{\partial (\cdot)}{\partial z_i}\right)_{P,\rho} = \left.-\left(\frac{\partial (\cdot)}{\partial T}\right)_{P,\mathbf{z}} \left(\frac{\partial \rho}{\partial z_i}\right)_{T,P,z_{j, j \neq i}}\middle/ \left(\frac{\partial \rho}{\partial T}\right)_{P,\mathbf{z}}+
+	\left(\frac{\partial (\cdot)}{\partial z_i}\right)_{T,P,z_{j, j \neq i}}\right.
+\end{align}
+For ($e,\rho,\mathbf{z}$) system, because the Jacobian matrix of ($e,\rho,\mathbf{z}$) and ($T,P,\mathbf{z}$) has the relation $\frac{\partial (e,\rho,\mathbf{z})}{\partial(T,P,\mathbf{z})}\frac{\partial(T,P,\mathbf{z})}{\partial (e,\rho,\mathbf{z})} = I$, $I$ is the identity matrix. The derivative of any property $F$ in  ($e,\rho,\mathbf{z}$) system can be obtained by $\frac{\partial F}{\partial (e,\rho,\mathbf{z})}=\frac{\partial F}{\partial(T,P,\mathbf{z})}\frac{\partial(T,P,\mathbf{z})}{\partial (e,\rho,\mathbf{z})} = \frac{\partial F}{\partial(T,P,\mathbf{z})} \frac{\partial (e,\rho,\mathbf{z})}{\partial(T,P,\mathbf{z})}^{-1}$
+Calculating the inverse matrix gives:
+\begin{align}
+	\Delta = \left(\frac{\partial e}{\partial T}\right)_{P,\mathbf{z}} \left(\frac{\partial \rho}{\partial P}\right)_{T,\mathbf{z}} -
+	\left(\frac{\partial e}{\partial P}\right)_{T,\mathbf{z}} \left(\frac{\partial \rho}{\partial T}\right)_{P,\mathbf{z}}
+\end{align}
+\begin{align}
+	\left(\frac{\partial (\cdot)}{\partial e}\right)_{\rho,\mathbf{z}} = \frac{1}{\Delta}\left[
+	\left(\frac{\partial (\cdot)}{\partial T}\right)_{P,\mathbf{z}}
+	\left(\frac{\partial \rho}{\partial P}\right)_{T,\mathbf{z}}  -
+	\left(\frac{\partial (\cdot)}{\partial P}\right)_{T,\mathbf{z}}
+	\left(\frac{\partial \rho}{\partial T}\right)_{P,\mathbf{z}} \right]
+\end{align}
+\begin{align}
+	\left(\frac{\partial (\cdot)}{\partial \rho}\right)_{e,\mathbf{z}} = \frac{1}{\Delta}\left[-
+	\left(\frac{\partial (\cdot)}{\partial T}\right)_{P,\mathbf{z}}
+	\left(\frac{\partial e}{\partial P}\right)_{T,\mathbf{z}}  +
+	\left(\frac{\partial (\cdot)}{\partial P}\right)_{T,\mathbf{z}}
+	\left(\frac{\partial e}{\partial T}\right)_{P,\mathbf{z}} \right]
+\end{align}
+
+\begin{align}
+	\left(\frac{\partial (\cdot)}{\partial z_i}\right)_{e,\rho,z_{j,j\neq i}} = \left(\frac{\partial (\cdot)}{\partial z_i}\right)_{T,P,z_{j,j\neq i}} + \left(\frac{\partial (\cdot)}{\partial T}\right)_{P,\mathbf{z}} \left(\frac{\partial T}{\partial z_i}\right)_{e,\rho,z_{j,j\neq i}} +
+	\left(\frac{\partial (\cdot)}{\partial P}\right)_{T,\mathbf{z}}
+	\left(\frac{\partial P}{\partial z_i}\right)_{e,\rho,z_{j,j\neq i}}
+\end{align}
+\begin{align}
+	\left(\frac{\partial T}{\partial z_i}\right)_{e,\rho,z_{j,j\neq i}} = \frac{1}{\Delta}\left[-
+	\left(\frac{\partial \rho}{\partial P}\right)_{T,\mathbf{z}}
+	\left(\frac{\partial e}{\partial z_i}\right)_{e,\rho,z_{j,j\neq i}}  +
+	\left(\frac{\partial e}{\partial P}\right)_{T,\mathbf{z}}
+	\left(\frac{\partial \rho}{\partial z_i}\right)_{e,\rho,z_{j,j\neq i}} \right]
+\end{align}
+
+\begin{align}
+	\left(\frac{\partial P}{\partial z_i}\right)_{e,\rho,z_{j,j\neq i}} = \frac{1}{\Delta}\left[]
+	\left(\frac{\partial \rho}{\partial T}\right)_{T,\mathbf{z}}
+	\left(\frac{\partial e}{\partial z_i}\right)_{e,\rho,z_{j,j\neq i}}  -
+	\left(\frac{\partial e}{\partial T}\right)_{T,\mathbf{z}}
+	\left(\frac{\partial \rho}{\partial z_i}\right)_{e,\rho,z_{j,j\neq i}} \right]
+\end{align}
+
+
 \comment{
- \section{VLE-based tabulation method} \label{App:tab} % and its verification
-    
-    A tabulation method is used to accelerate VLE model computation. This method is used to replace the computationally expensive on-the-fly TPn flash. Within the given range of temperature, pressure, and mass fraction, TPn problems are solved on the evenly spaced grid points. Then the thermodynamic proprieties (including $\rho$, $h$, $c_v$, $c_p$) and  transport  proprieties (including $D_m$, $\mu$, $\alpha$) are evaluated using TPn solutions. 
-    The TPn solutions and all properties are recorded into the table. When retrieving the solution of given input ($T^*$, $p^*$, $x^*$), linear interpolation is used:
-    \begin{enumerate}
-     \item Find the closest temperature, pressure and mass fraction in the table, 
-     $T_1 \leq T^* < T_2 $,
-     $p_1 \leq p^* < p_2 $,
-     $x_1 \leq x^* < x_2 $
-     \item Calculate the weight for linear interpolation,
-     $ \alpha^v_1=\frac{v_2-v^*}{v_2-v_1}$,
-     $ \alpha^v_2=\frac{v^*-v_1}{v_2-v_1}$, $v=T,p,x$
-     \item For any property $A$ in the table, linear interpolation uses the formula $A^* = \sum_{i,j,k=1,2}\alpha^T_i \alpha^p_i \alpha^x_i A_{ijk} $
-    \end{enumerate}
-    
-    To mitigate the concern about potential VLE-inconsistency, an accuracy test is provided here. The same shock tube case as the one in Sec.~\ref{sec:results:ShockTube} is used to test the tabulation method. The shock tube condition is shown in Table~\ref{conditions}.
-    The table used for the simulation covers the temperature range of 470-600 K, pressure range of 9-25 MPa, and $x_{\ce{CO2}}$ range of 0.6-0.9. The table grid sizes are $\Delta T = 1.3$ K, $\Delta p = 0.4$ MPa, and $\Delta x_{\ce{CO2}} = 0.015$.
-    The $L^{\infty}$ absolute error (i.e., $max(\Delta A)$), maximum local relative error (i.e., $max(\frac{\Delta A}{A})$), and $L^2$ relative error (i.e., $ \frac{\|\Delta A\|_{L^2}}{\|A\|_{L^2}}$) are obtained by comparing to the results without tabulation, and shown in Table.~\ref{table:error}. The results show that the maximum local errors are controlled within 10\% and the $L^2$ errors are control within 5\%.
+\section{VLE-based tabulation method} \label{App:tab} % and its verification
 
-    \begin{table}[htbp]
-        %\begin{center}
-        \centering
-        \begin{minipage}{0.9\textwidth}
-            \caption{Relative error of VLE-based tabulation method.} \label{table:error}
-            \begin{center}
-                \begin{tabular}{@{}l|lll@{}} %\hline
-                    \toprule
-                                    &Pressure  & Density   & Gas Mole Frac.   \\ %\hline
-                    \midrule
-                    $L^{\infty}$ absolute error           & 0.17 MPa        & 5.889 $kg/m^3$   & 0.02\\%\hline
-                    maximum local relative error          &  1.4\%           & 1.6\%   & 2.1\% \\ %\hline
-                     $L^2$ relative error               &  0.09\%           & 0.09\%   & 0.1\% \\ %\hline
-                    \bottomrule
-                \end{tabular}
+A tabulation method is used to accelerate VLE model computation. This method is used to replace the computationally expensive on-the-fly TP flash. Within the given range of temperature, pressure, and mass fraction, TP problems are solved on the evenly spaced grid points. Then the thermodynamic proprieties (including $\rho$, $h$, $c_v$, $c_p$) and  transport  proprieties (including $D_m$, $\mu$, $\alpha$) are evaluated using TP solutions.
+The TP solutions and all properties are recorded into the table. When retrieving the solution of given input ($T^*$, $p^*$, $x^*$), linear interpolation is used:
+\begin{enumerate}
+	\item Find the closest temperature, pressure and mass fraction in the table,
+	      $T_1 \leq T^* < T_2 $,
+	      $p_1 \leq p^* < p_2 $,
+	      $x_1 \leq x^* < x_2 $
+	\item Calculate the weight for linear interpolation,
+	      $ \alpha^v_1=\frac{v_2-v^*}{v_2-v_1}$,
+	      $ \alpha^v_2=\frac{v^*-v_1}{v_2-v_1}$, $v=T,p,x$
+	\item For any property $A$ in the table, linear interpolation uses the formula $A^* = \sum_{i,j,k=1,2}\alpha^T_i \alpha^p_i \alpha^x_i A_{ijk} $
+\end{enumerate}
 
-            \end{center}
-        \end{minipage}
-        %\end{center}
+To mitigate the concern about potential VLE-inconsistency, an accuracy test is provided here. The same shock tube case as the one in Sec.~\ref{sec:results:ShockTube} is used to test the tabulation method. The shock tube condition is shown in Table~\ref{conditions}.
+The table used for the simulation covers the temperature range of 470-600 K, pressure range of 9-25 MPa, and $x_{\ce{CO2}}$ range of 0.6-0.9. The table grid sizes are $\Delta T = 1.3$ K, $\Delta p = 0.4$ MPa, and $\Delta x_{\ce{CO2}} = 0.015$.
+The $L^{\infty}$ absolute error (i.e., $max(\Delta A)$), maximum local relative error (i.e., $max(\frac{\Delta A}{A})$), and $L^2$ relative error (i.e., $ \frac{\|\Delta A\|_{L^2}}{\|A\|_{L^2}}$) are obtained by comparing to the results without tabulation, and shown in Table.~\ref{table:error}. The results show that the maximum local errors are controlled within 10\% and the $L^2$ errors are control within 5\%.
 
-    \end{table}
+\begin{table}[htbp]
+	%\begin{center}
+	\centering
+	\begin{minipage}{0.9\textwidth}
+		\caption{Relative error of VLE-based tabulation method.} \label{table:error}
+		\begin{center}
+			\begin{tabular}{@{}l|lll@{}} %\hline
+				\toprule
+				                             & Pressure & Density        & Gas Mole Frac. \\ %\hline
+				\midrule
+				$L^{\infty}$ absolute error  & 0.17 MPa & 5.889 $kg/m^3$ & 0.02           \\%\hline
+				maximum local relative error & 1.4\%    & 1.6\%          & 2.1\%          \\ %\hline
+				$L^2$ relative error         & 0.09\%   & 0.09\%         & 0.1\%          \\ %\hline
+				\bottomrule
+			\end{tabular}
+
+		\end{center}
+	\end{minipage}
+	%\end{center}
+
+\end{table}
 
 
-    }
+}
 
 
 \comment{
 In this method, dynamic viscosity and thermal conductivity have the similar formula:
 \begin{equation}
-\lambda=\lambda_0 \lambda^*+\lambda_p, \label{transp}
+	\lambda=\lambda_0 \lambda^*+\lambda_p, \label{transp}
 \end{equation}
-where $\lambda$ represents dynamic viscosity or thermal conductivity. $\lambda_0$ is the property at the low-pressure limit. $\lambda^*$ and $\lambda_p$ are high pressure corrections. At high pressures, $\lambda_p$ is the major contributing term compared to $\lambda_0 \lambda^*$. On the other hand, at low pressures, $\lambda^*$ is approaching unity and the $\lambda_p$ term is negligible such that Eq.~\ref{transp} reduces to $\lambda_0$. Hence, the transition between low-pressure and high-pressure properties is smoothly described by the model. 
+where $\lambda$ represents dynamic viscosity or thermal conductivity. $\lambda_0$ is the property at the low-pressure limit. $\lambda^*$ and $\lambda_p$ are high pressure corrections. At high pressures, $\lambda_p$ is the major contributing term compared to $\lambda_0 \lambda^*$. On the other hand, at low pressures, $\lambda^*$ is approaching unity and the $\lambda_p$ term is negligible such that Eq.~\ref{transp} reduces to $\lambda_0$. Hence, the transition between low-pressure and high-pressure properties is smoothly described by the model.
 
 }
 

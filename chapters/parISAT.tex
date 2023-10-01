@@ -27,6 +27,8 @@ In this study, we proposed a shared-memory parallel ISAT using a concurrency dat
 \end{figure}
 
 
+
+
 \section{Method}
 \subsection{shared memory architecture}
 In the proposed model, the primary objective is to optimize the utilization of compute nodes' resources effectively. To achieve this goal, I need a hybrid architecture that seamlessly integrates shared memory capabilities into the system's design. While there are various approaches to implementing shared memory functionality, one common choice is the hybrid MPI-OpenMP model, which leverages OpenMP for shared memory support and MPI for process-level parallelism across nodes. The hybrid MPI-OpenMP model has seen widespread use in parallel computing \cite{ouro2019scalability,he2020structured,zhong2020efficien}.
@@ -107,12 +109,7 @@ In comparison to the original method, this approach has its drawbacks, particula
 
 %对于上一节提到的redundant record deletion methods，那个数据结构难以实现高并发的版本，因此我们使用了一个简化的版本，我们在每次使用一个记录后记录调用的时间，由于这种读写在同一个时间不长内被写入的值都是一样的，不存在数据竞争的问题，此过程不会降低速度。我们在每一定的时间步长后，根据最近调用的时间将所有的记录排序，然后使用之前相同的条件做删除。此方法相比于动态方法的缺点是，无法严格保证条件的满足，而且排序是针对所有数据的，动态方法是只对增量数据有改动。当数据量很大的时候这一方法会展现缺点，但是因为表格大小在此应用中控制的较好，不会带来明显的性能损失。
 
-\begin{figure}[htbp]
-    \centering
-\includegraphics[width=0.9\linewidth]{MPI arch.png} 
-\caption{Schematic of the proposed parallel ISAT method.}
-\label{MPI_arch2} 
-\end{figure}
+
 
 \subsection{Load balancing}
 
